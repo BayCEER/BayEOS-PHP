@@ -1,0 +1,27 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.9.2
+
+Package: bayeos-gateway-client-php
+Version: 1.0.3
+Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
+# Pre-Depends: <comma-separated list of packages>
+Depends: php5, php5-curl
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+# Architecture: all
+# Copyright: <copyright file; defaults to GPL2>
+# Changelog: <changelog file; defaults to a generic changelog>
+# Readme: <README.Debian file; defaults to a generic one>
+Extra-Files: MyClient.php, BayEOSWriter.php, BayEOSSender.php
+Files: BayEOSGatewayClient.php /usr/share/php/
+ BayEOSSerialPHP.php /usr/share/php/
+Description: BayEOSGatewayClient library class for PHP 
+ For usage have a look at the example files in /usr/share/doc/bayeos-gateway-client-php/
+ 

@@ -1,0 +1,31 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.9.2
+
+Package: bayeos-xbee-router-php
+Version: 1.0.3
+Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
+# Pre-Depends: <comma-separated list of packages>
+Depends: bayeos-gateway-client-php (>=1.0.3)
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+# Architecture: all
+# Copyright: <copyright file; defaults to GPL2>
+# Changelog: <changelog file; defaults to a generic changelog>
+# Readme: <README.Debian file; defaults to a generic one>
+Files: bayeos-xbee-router /etc/init.d/
+ bayeos-xbee-router.ini /etc/
+ logrotate.d/bayeos-xbee-router /etc/
+ bayeos-xbee-router_start.sh /usr/sbin/
+ bayeos-xbee-router.php /usr/sbin/
+ phpXBee.php /usr/share/php/
+Description: Read out XBee via USB and sends data to a BayEOS gateway 
+ bayeos-xbee-router-php uses the bayeos-gateway-client-php library. Configuration is
+ in /etc/bayeos-xbee-router.ini
+ 

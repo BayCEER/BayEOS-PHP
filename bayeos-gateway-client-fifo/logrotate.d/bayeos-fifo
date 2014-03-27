@@ -1,0 +1,10 @@
+/var/log/bayeos-fifo/*.log {
+	dayly
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	postrotate
+		/etc/init.d/bayeos-fifo restart > /dev/null
+	endscript
+}

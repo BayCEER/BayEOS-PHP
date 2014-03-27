@@ -1,0 +1,29 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.9.2
+
+Package: eurotherm2704-php
+Version: 1.0.1
+Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
+# Pre-Depends: <comma-separated list of packages>
+Depends: bayeos-gateway-client-php (>= 1.0.3)
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+# Architecture: all
+# Copyright: <copyright file; defaults to GPL2>
+# Changelog: <changelog file; defaults to a generic changelog>
+# Readme: <README.Debian file; defaults to a generic one>
+Files: eurotherm2704 /etc/init.d/
+ eurotherm2704.ini /etc/
+ logrotate.d/eurotherm2704 /etc/
+ eurotherm2704_start.sh /usr/sbin/
+ eurotherm2704.php /usr/sbin/
+Description: Read out Eurotherm2704 via ModbusTCP and send data to a BayEOS gateway 
+ eurotherm2704-php uses the bayeos-gateway-client-php library. Configuration is
+ in /etc/eurotherm2704.ini

@@ -1,0 +1,10 @@
+/var/log/eurotherm2704/*.log {
+	dayly
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	postrotate
+		/etc/init.d/eurotherm2704 restart > /dev/null
+	endscript
+}

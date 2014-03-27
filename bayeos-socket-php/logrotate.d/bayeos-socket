@@ -1,0 +1,10 @@
+/var/log/bayeos-socket/*.log {
+	dayly
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	postrotate
+		/etc/init.d/bayeos-socket restart > /dev/null
+	endscript
+}

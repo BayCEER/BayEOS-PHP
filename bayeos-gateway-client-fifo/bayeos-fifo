@@ -1,0 +1,89 @@
+#!/bin/sh
+# Start/stop the bayeos-fifo readout daemon.
+#
+### BEGIN INIT INFO
+# Provides:          bayeos-fifo
+# Required-Start:    $local_fs $remote_fs $network $syslog $named 
+# Required-Stop:     $local_fs $remote_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start bayeos-fifo modbus readout script
+# Description:       Start simple BayEOS data collecting processes 
+### END INIT INFO
+
+
+
+test -f /usr/sbin/bayeos-fifo_start.sh || exit 0
+
+PIDFILE=/var/run/bayeos-fifo.pid
+[ -r /etc/default/bayeos-fifo ] && . /etc/default/bayeos-fifo
+
+. /lib/lsb/init-functions
+
+
+# We read /etc/environment, but warn about locale information in
+# there because it should be in /etc/default/locale.
+parse_environment () 
+{
+    for ENV_FILE in /etc/environment /etc/default/locale; do
+        [ -r "$ENV_FILE" ] || continue
+        [ -s "$ENV_FILE" ] || continue
+
+         for var in LANG LANGUAGE LC_ALL LC_CTYPE; do
+             value=`egrep "^${var}=" "$ENV_FILE" | tail -n1 | cut -d= -f2`
+             [ -n "$value" ] && eval export $var=$value
+
+             if [ -n "$value" ] && [ "$ENV_FILE" = /etc/environment ]; then
+                 log_warning_msg "/etc/environment has been deprecated for locale information; use /etc/default/locale for $var=$value instead"
+             fi
+         done
+     done
+
+# Get the timezone set.
+    if [ -z "$TZ" -a -e /etc/timezone ]; then
+        TZ=`cat /etc/timezone` 
+    fi
+}
+
+# Parse the system's environment
+if [ "$READ_ENV" = "yes" ] ; then
+    export LANG LC_ALL LC_CTYPE TZ LC_COLLATE
+    parse_environment
+    LC_COLLATE=C # Force collation sequence since ASCII is expected in regexps
+fi
+
+
+case "$1" in
+start)	log_daemon_msg "Starting bayeos-fifo" "bayeos-fifo"
+        start-stop-daemon --start --quiet --oknodo --make-pidfile --pidfile $PIDFILE  --name bayeos-fifo --background\
+        --exec /usr/sbin/bayeos-fifo_start.sh  
+        log_end_msg $?
+	;;
+stop)	log_daemon_msg "Stopping bayeos-fifo" "bayeos-fifo"
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE
+        log_end_msg $?
+        ;;
+restart) log_daemon_msg "Restarting bayeos-fifo" "bayeos-fifo"
+	$0 stop
+	$0 start
+        ;;
+status)
+       log_action_begin_msg "Checking bayeos-fifo " 
+       if pidofproc -p "$PIDFILE" >/dev/null; then
+            log_action_end_msg 0 "running"
+            exit 0
+       else
+           if [ -e "$PIDFILE" ]; then
+                log_action_end_msg 1 "failed to start"
+                exit 1
+           else
+                log_action_end_msg 0 "not running"
+                exit 3
+           fi
+       fi
+         ;;
+*)	log_action_msg "Usage: /etc/init.d/bayeos-fifo {start|stop|status|restart}"
+        exit 2
+        ;;
+esac
+exit 0

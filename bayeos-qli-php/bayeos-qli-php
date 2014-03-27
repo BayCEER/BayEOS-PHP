@@ -1,0 +1,31 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.9.2
+
+Package: bayeos-qli-php
+Version: 1.0.0
+Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
+# Pre-Depends: <comma-separated list of packages>
+Depends: bayeos-gateway-client-php (>=1.0.3)
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+# Architecture: all
+# Copyright: <copyright file; defaults to GPL2>
+# Changelog: <changelog file; defaults to a generic changelog>
+# Readme: <README.Debian file; defaults to a generic one>
+Files: bayeos-qli /etc/init.d/
+ bayeos-qli.ini /etc/
+ logrotate.d/bayeos-qli /etc/
+ bayeos-qli_start.sh /usr/sbin/
+ bayeos-qli.php /usr/sbin/
+ QLI.php /usr/share/php/
+Description: Read out XBee via serial and sends data to a BayEOS gateway 
+ bayeos-qli-php uses the bayeos-gateway-client-php library. Configuration is
+ in /etc/bayeos-qli.ini
+ 

@@ -1,0 +1,31 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: misc
+Priority: optional
+# Homepage: <enter URL here; no default>
+Standards-Version: 3.9.2
+
+Package: bayeos-fifo-php
+Version: 1.0.1
+Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
+# Pre-Depends: <comma-separated list of packages>
+Depends: bayeos-gateway-client-php (>= 1.0.3)
+# Recommends: <comma-separated list of packages>
+# Suggests: <comma-separated list of packages>
+# Provides: <comma-separated list of packages>
+# Replaces: <comma-separated list of packages>
+# Architecture: all
+# Copyright: <copyright file; defaults to GPL2>
+# Changelog: <changelog file; defaults to a generic changelog>
+# Readme: <README.Debian file; defaults to a generic one>
+Extra-Files: test.sh, test_date.sh
+Files: bayeos-fifo /etc/init.d/
+ bayeos-fifo.ini /etc/
+ logrotate.d/bayeos-fifo /etc/
+ bayeos-fifo_start.sh /usr/sbin/
+ bayeos-fifo.php /usr/sbin/
+Description: Creates fifos to collect data and send it to a BayEOS gateway 
+ bayeos-fifo-php uses the bayeos-gateway-client-php library. Configuration is
+ in /etc/bayeos-fifo.ini. Starts one reader (script), one writer and one sender process.
+ Example shell script is under /usr/share/doc/bayeos-fifo-php

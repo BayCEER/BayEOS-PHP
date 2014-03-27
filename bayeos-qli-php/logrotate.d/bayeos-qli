@@ -1,0 +1,10 @@
+/var/log/bayeos-qli/*.log {
+	dayly
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	postrotate
+		/etc/init.d/bayeos-qli restart > /dev/null
+	endscript
+}
