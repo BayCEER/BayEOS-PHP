@@ -1,7 +1,10 @@
 #!/usr/bin/php
 <?php 
 /*
- * Command line script to read out Eurotherm 2704 via ModbusTCP
+ * Command line script to read STDOUT and STDERR of
+ * an arbitrary shell script
+ * 
+ * tries to parse STDOUT of shell script into timestamp (optional), array of values
  * 
  * 
  */

@@ -1,57 +1,30 @@
 <?php 
-/*
- * BayEOSGatewayClient-Classes for PHP
+/**
+ * @mainpage BayEOS PHP Classes
  * 
  * Bugs and Feedback:
  * holzheu@bayceer.uni-bayreuth.de
  * 
+ * Source Code is available on 
+ * https://github.com/BayCEER/BayEOS-PHP
+ * 
+ * Binary Packages for Debian Wheezy could be installed by adding
+ * 
+ * deb	http://www.bayceer.uni-bayreuth.de/edv/debian wheezy/
+ * 
+ * to /etc/apt/sources.list
+ * 
+ * @section sec1 Introduction
  * This classes allowes the user to build up own BayEOS-Device implementations in PHP
  * 
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BayEOSGatewayClient
+ * **********************************************************************************
+ * @subsection sec1_1 BayEOSWriter-Class
  * 
- * This is a base class. Only works on systems with fork! 
- * It forks two processes for each device: one writer, one sender
- * 
- * To make use of the class
- * one has do derive a class and overwrite the readData()
- * 
- * To set up a routing devices (e.g. XBee) one has to additionaly overwrite
- * the saveData($data)
- * 
- * To init a writer process, one can overwrite initWriter()
- * 
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BayEOSWriter-Class
- * 
- * reads data either directly (sensor) or via different ways of communication (XBee, QLI, ...)
+ * BayEOSWriter reads data either directly (sensor) or via different ways of communication (XBee, QLI, ...)
  * and stores data in files in a queue directory
  * 
- * Example:
- * $w = new BayEOSWriter('/tmp/test-device');
- * while(TRUE){
- *   $data=getDataFromSensor(); //has to be implemented!
- *   $w->saveDataFrame($data);
- *   sleep(5);
- * }
- *  
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BayEOSSender-Class
+ * Example: \ref BayEOSWriter.php
  * 
- * Looks for finished data files in queue-directory and trys to send the data to the
- * configured BayEOS-Gateway
- * 
- *  Example:
- *  $s = new BayEOSSender('/tmp/test-device','Name of Device(Sender)','URL-to-Gateway-save-frame','password');
- *  while(TRUE){
- *	  $c = $s->send();
- *	  if($c){
- *		echo "Successfully sent $c post requests\n";
- *	  }
- *	  sleep(5);
- *  }
- *  
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Storage structure:
  * 
  * BayEOSWriter only has one active file. Ending is ".act"
@@ -62,10 +35,50 @@
  * File formate is binary. For each frame there is
  * [timestamp double][length short][frame]
  * 
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BayEOSType-Class
+ *  
+ * **********************************************************************************
  * 
- * Helper Class to do binary transformations...
+ * @subsection sec1_2 BayEOSSender-Class
+ * 
+ * BayEOSSender looks for finished data files in queue-directory and trys to send the data to the
+ * configured BayEOS-Gateway
+ * 
+ * Example: \ref BayEOSSender.php
+ *  
+ * ***********************************************************************************
+ * @subsection sec1_3 BayEOSGatewayClient
+ * 
+ * BayEOSGatewayClient is a wrapper class. Only works on systems with fork! 
+ * It forks two processes for each device: one writer, one sender
+ * 
+ * To make use of the class
+ * one has do derive a class and overwrite the BayEOSGatewayClient::readData()
+ * 
+ * To set up a routing devices (e.g. XBee) one has to additionaly overwrite
+ * the BayEOSGatewayClient::saveData($data)
+ * 
+ * To init a writer process, one can overwrite BayEOSGatewayClient::initWriter()
+ *
+ * Example: \ref MyClient.php
+ * 
+ * ***********************************************************************************
+ * @subsection sec1_4 BayEOSType-Class
+ * 
+ * BayEOSType is a helper Class to do binary transformations...
+ * 
+ * @section sec2 Implementations
+ * BayEOSFifo
+ * 
+ * Eurotherm2704
+ * 
+ * PHPQLI
+ * 
+ * PHPSerialRouter
+ * 
+ * PHPSocketRouter
+ * 
+ * PHPXBeeRouter
+ * 
  */
 class BayEOSType {
 
@@ -164,9 +177,14 @@ class BayEOSType {
 
 
 class BayEOS {
-	/*
-	 * createDataFrame: Pack values-array into binary DataFrame
-	*/
+/**
+ * create bayeos data frame
+ * 
+ * @param array $values
+ * @param int $type
+ * @param int $offset
+ * @return string (binary)
+ */
 	public static function createDataFrame($values,$type=0x1,$offset=0){
 		$bayeos_frame=pack("C2",0x1,$type);
 		//Extract offset and data type
@@ -198,7 +216,16 @@ class BayEOS {
 		return $bayeos_frame;
 	}
 
-	
+/**
+ * Parse a binary bayeos frame into a PHP array
+ * 
+ * @param string $frame
+ * @param float $ts
+ * @param string $origin
+ * @param int $rssi
+ * @return array
+ * 
+ */
 	public static function parseFrame($frame,$ts=FALSE,$origin='',$rssi=FALSE){
 		if(! $ts) $ts=microtime(TRUE);
 		$type=array_pop(unpack("C",substr($frame,0,1)));
@@ -269,10 +296,14 @@ class BayEOS {
 		return $res;		
 	}
 	
-	/*
-	 * parseDataFrame back into PHP-Values
-	*/
-	public static function parseDataFrame($frame){
+
+/**
+ * Parse a bayeos data frame into a PHP array
+ * 
+ * @param string $frame
+ * @return array
+ */	
+ public static function parseDataFrame($frame){
 		if(substr($frame,0,1)!=pack("C",0x1)) return FALSE;
 		$type=array_pop(unpack("C",substr($frame,1,1)));
 		//Extract offset and data type
@@ -321,6 +352,16 @@ class BayEOS {
 }
 
 class BayEOSWriter {
+/**
+ * Create a BayEOSWriter Instance
+ *
+ * @param string $path
+ *  Path of queue directory
+ * @param int $max_chunk
+ *  Maximum file size when a new file is started
+ * @param int $max_time
+ *  Maximum time when a new file is started
+*/
 	function __construct($path,$max_chunk=5000,$max_time=60){
 		$this->path=$path;
 		$this->max_chunk=$max_chunk;
@@ -344,19 +385,33 @@ class BayEOSWriter {
 
 
 
-	/*
-	 * A simple DateFrame adding function 
-	*/
+/**
+ * Write a dataFrame to the buffer
+ * 
+ * @param array $value
+ *  in the form ('channel_number'=>'value',...)
+ * @param int $type
+ *  valid bayeos data frame type number
+ * @param int offset
+ *  offset parameter for bayeos data frames (not relevant for all types)
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+*/
 	function saveDataFrame($values,$type=0x1,$offset=0,$ts=0){
 		$this->saveFrame(BayEOS::createDataFrame($values,$type,$offset),$ts);
 	}
 
-	/*
-	 * Save Origin Frame
-	 * 
-	 * May be usefull for routing multiple devices (e.g. QLI1, QLI2,...)
-	 * 
-	*/
+/**
+ * Save Origin Frame
+ * 
+ * @param string $origin 
+ *  is the name to appear in the gateway
+ * @param string $frame 
+ * must be a valid bayeosframe
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+*/
 	function saveOriginFrame($origin,$frame,$ts=0){
 		$origin=substr($origin,0,255);
 		$this->saveFrame(
@@ -366,11 +421,21 @@ class BayEOSWriter {
 			$frame,$ts); 
 	}
 
-	/*
-	 * Save Routed Frame RSSI
-	 * 
-	 * Special routed frame for XBee. Similar to saveOriginFrame
-	*/
+/**
+ * Save Routed Frame RSSI
+ * 
+ * @param int $MyId
+ * TX-XBee MyId
+ * @param int $PanId
+ * XBee PANID
+ * @param int $rssi
+ * RSSI
+ * @param string $frame 
+ * must be a valid bayeosframe
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+*/
 	function saveRoutedFrameRSSI($MyId,$PanId,$rssi,$frame,$ts=0){
 		$this->saveFrame(
 				pack("C",0x8). //Starting Byte
@@ -380,24 +445,43 @@ class BayEOSWriter {
 				$frame,$ts);
 	}
 	
-	/*
-	 * Save Message
-	 */
+/**
+ * Save Message
+ * 
+ * @param string $sting
+ * Message to save
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+ */
 	function saveMessage($sting,$ts=0){
 		$this->saveFrame(pack("C",0x4).$sting,$ts);
 	}
 	
-	/*
-	 * Save Error
-	 */
+/**
+ * Save Error Message
+ * 
+ * @param string $sting
+ * Message to save
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+ */
 	function saveErrorMessage($sting,$ts=0){
 		$this->saveFrame(pack("C",0x5).$sting,$ts);
 	}
 	
-	/*
-	 * Saves Frames in file with
-	* [timestamp double][length short][frame ]
-	*/
+/**
+ * Save Frame
+ * 
+ * Base Function
+ * 
+ * @param string $frame 
+ * must be a valid bayeosframe
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+ */
 	public function saveFrame($frame,$ts=0){
 		if(! $ts) $ts=microtime(TRUE);
 		fwrite($this->fp,
@@ -432,16 +516,24 @@ class BayEOSWriter {
 }
 
 class BayEOSSender {
-	/*
-	 * Constructor for a BayEOS-Sender
-	 * path: Path where BayEOSWriter puts files
-	 * name: Sender name
-	 * url: GatewayURL
-	 * pw: Password on gateway
-	 * user: User on gateway
-	 * absolute_time: if set to false, relative time is used (delay)
-	 * rm: If set to false files are kept as .bak file in the BayEOSWriter directory 
-	 */
+/**
+ * Constructor for a BayEOS-Sender
+ * 
+ * @param string $path
+ *  Path where BayEOSWriter puts files
+ * @param string $name
+ *  Sender name
+ * @param string $url
+ * 	GatewayURL e.g. http://<gateway>/gateway/frame/saveFlat
+ * @param string $pw
+ * 	Password on gateway
+ * @param string $user
+ *  User on gateway
+ * @param bool $absolute_time
+ *  if set to false, relative time is used (delay)
+ * @param bool $rm
+ *  If set to false files are kept as .bak file in the BayEOSWriter directory 
+*/
 	function __construct($path,$name,$url,$pw,$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9'){
 		if(! filter_var($url, FILTER_VALIDATE_URL))
 			die("URL '$url' not valid\n");
@@ -458,10 +550,12 @@ class BayEOSSender {
 		$this->gateway_version=$gateway_version;
 	}
 
-	/*
-	 * Keeps sending as long as all files are send or an error occures
-	 * returns number of post requests...
-	 */
+/**
+ * Keeps sending as long as all files are send or an error occures
+ * 
+ * @return int 
+ * number of post requests...
+ */
 	function send(){
 		$count=0;
 		while($post=$this->sendFile()){
@@ -471,11 +565,11 @@ class BayEOSSender {
 		
 	}
 	
-	/*
-	 * Read one file from the queue and try to send it to the gateway.
-	 * On success rename the file to *.bak
-	 * take allways the oldest file
-	 */
+/**
+ * Read one file from the queue and try to send it to the gateway.
+ * On success file is deleted or rename the file to *.bak.
+ * Takes allways the oldest file
+*/
 	private function sendFile(){
 		chdir($this->path);
 		$files=glob('*.rd');
@@ -535,7 +629,12 @@ class BayEOSSender {
 		return 0;		
 		
 	}
-	
+/**
+ * 
+ * @param $string $data
+ * @return success
+ * 
+ */	
 	private function post($data){
 		//echo "POST:".$this->url.'-'.$this->pw.'-'.$this->user."\n$data\n";
 		$ch=curl_init($this->url);
@@ -571,10 +670,23 @@ class BayEOSSender {
 
 
 class BayEOSGatewayClient{
-	/*
-	 * constructor
-	 */
-	function __construct($names,$options=array()){
+/**
+ * Create a instance of BayEOSGatewayClient
+ * 
+ * @param array $names
+ * 	Name array: e.g. array('Fifo.0','Fifo.1'...)
+ *  Name is used for the storage directory: e.g. /tmp/Fifo.0, ...
+ * @param array $options
+ * 	Array of options. Three forms are possible:
+ *  
+ *  1. $options['key']='value': Same value for all devices
+ *  2. $options['key']=array('value1','value2',...): value1 is for device1, ...
+ *  3. $options['key']=array('name1'=>'value1','name2'=>'value2',..) 
+ *  
+ *  It is not possilbe to mix forms for one key!!
+ *  
+ */	
+function __construct($names,$options=array()){
 		if(! is_array($names) && $names)
 			$names=array($names);
 		if(count(array_unique($names))<count($names))
@@ -615,8 +727,14 @@ class BayEOSGatewayClient{
 		$this->options=$options;
 	}
 	
-	/*
-	 * Helper Function
+	/**
+	 * Helper function to get a option value
+	 * 
+	 * @param string $key
+	 * @param string $default
+	 * 
+	 * @return string 
+	 *  Value of the specified option key
 	 */
 	function getOption($key,$default=''){
 		if(isset($this->options[$key])){
@@ -631,7 +749,11 @@ class BayEOSGatewayClient{
 		return $default;
 		
 	}
-	
+/**
+ * Runs the BayEOSGatewayClient
+ * 
+ * forks one BayEOSWrite and one BayEOSSender per name 
+ */	
 	function run(){
 		for($i=0;$i<count($this->names);$i++){
 			$this->i=$i;
@@ -720,19 +842,28 @@ class BayEOSGatewayClient{
 		}
 	}
 	
+	/**
+	 * Method called by BayEOSGatewayClient::run()
+	 * 
+	 * can be overwritten by implementation
+	 */
 	protected function initWriter(){
 	}
 	
-	/*
-	 * readData-Method should be overwritten by Implementation!
+	/**
+	 * Method called by BayEOSGatewayClient::run() 
+	 * 
+	 *  must be overwritten by implementation!
 	 */
 	protected function readData(){
 		die("no readData() found!\n");
 		return FALSE;
 	}
 	
-	/*
-	 * saveData may be overwritten by Implementation (e.g. to store routed frames)
+	/**
+	 * Method called by BayEOSGatewayClient::run() 
+	 * 
+	 * can be overwritten by Implementation (e.g. to store routed frames)
 	 */
 	protected function saveData($data){
 		$this->writer->saveDataFrame($data,$this->getOption('data_type'));
