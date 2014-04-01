@@ -36,6 +36,8 @@ class BayEOSFifo extends BayEOSGatewayClient {
 	private $dec;
 	private $datetime_format;
 	private $tz;
+	private $pid_script;
+	
 	/*
 	 * constructor
 	*/
@@ -112,6 +114,11 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		$this->writer->saveDataFrame($data['values'],$this->getOption('data_type'),0,$data['ts']);
 	}
 	
+	private function termChilds($pid){
+		exec("pgrep -P $pid",$res);
+		if($res[0]) $this->termChilds($res[0]);
+		posix_kill($pid,SIGTERM);
+	}
 	
 	protected function initWriter(){
 		$name=$this->names[$this->i];
@@ -130,21 +137,29 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		$script=$this->getOption('script');
 		if(! is_executable($script))
 			die("$script is not executable\n");
-/*		
-		$descriptorspec = array(
-//				0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-				1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-				2 => array("pipe", "w") // stderr is a pipe that the child will write to
-		);
-		$process = proc_open($script." &", $descriptorspec, $this->pipes);
 
-				*/
 		//Start the script
 		$pid=pcntl_fork();
 		if ($pid == -1) {
 			die('Could not fork reader process!');
 		} else if ($pid) {
 			// We are the parent
+			//Signalhanlder to stop the script on SIGTERM
+			$this->pid_script=$pid;
+			declare(ticks = 1);
+			pcntl_signal(SIGTERM, function($signo) {
+				switch ($signo) {
+					case SIGTERM:
+						// Aufgaben zum Beenden bearbeiten
+						echo date('Y-m-d H:i:s')." Stopping script ".$this->getOption('script')." for ".$this->name[$this->i]." with pid ".$this->pid_script."\n";
+						$this->termChilds($this->pid_script);
+						exit();
+					break;
+				}
+			
+			});
+				
+			
 			$this->fp_data=fopen($this->data_fifo,'r');
 			$this->fp_error=fopen($this->error_fifo,'r');
 			stream_set_blocking($this->fp_data, false);
@@ -161,7 +176,6 @@ class BayEOSFifo extends BayEOSGatewayClient {
 			exec("$script >".$this->data_fifo." 2>".$this->error_fifo);
 			exit();
 		}
-		//open Fifos for read
 
 	}
 
