@@ -95,16 +95,18 @@ class BayEOSType {
     }
     
     public static function UINT64($value,$endianness = 0){
-	$big = 0xffffffff00000000;
-	$little = 0x00000000ffffffff;
+    	$a = gmp_init("$value");
+    	$b=array();
+    	for($i=0;$i<4;$i++){
+    		$res = gmp_div_qr($a, "0x10000");
+    		$a=$res[0];
+    		$b[$i]=gmp_intval($res[1]);
+    	}
 
-	$b = ($big & $value) >>32;
-	$l = $little & $value;
-	
-	if($endianness) return pack("NN",$b,$l);
-	else return pack("VV",$l,$b);
+    	if($endianness) return pack("nnnn",$b[3],$b[2],$b[1],$b[0]);
+    	else return pack("vvvv",$b[0],$b[1],$b[2],$b[3]);
     }
-    
+
     public static function FLOAT32($value,$endianness = 0){
     	$float = pack("f", $value);
     	// set 32-bit unsigned integer of the float
@@ -601,10 +603,10 @@ class BayEOSSender {
 			if($bayeos_frame){
 				$count++;
 				if($this->absolute_time){
-					if($this->gateway_version=='1.8') $bayeos_frame=pack("C",0x9).BayEOSType::UINT32($ts-$ref).$bayeos_frame;
-					else $bayeos_frame=pack("C",0xc).BayEOSType::UINT64($ts*1000).$bayeos_frame;
+					if($this->gateway_version=='1.8') $bayeos_frame=pack("C",0x9).BayEOSType::UINT32(round($ts-$ref)).$bayeos_frame;
+					else $bayeos_frame=pack("C",0xc).BayEOSType::UINT64(round($ts*1000)).$bayeos_frame;
 				}else
-					$bayeos_frame=pack("C",0x7).BayEOSType::UINT32((microtime(TRUE)-$ts)*1000).$bayeos_frame;
+					$bayeos_frame=pack("C",0x7).BayEOSType::UINT32(round((microtime(TRUE)-$ts)*1000)).$bayeos_frame;
 				$frames.="&bayeosframes[]=".($this->gateway_version=='1.8'?
 						base64_encode($bayeos_frame):urlencode(base64_encode($bayeos_frame)));
 			}
@@ -641,6 +643,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_POST,1);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.4');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -849,7 +852,7 @@ function __construct($names,$options=array()){
 	 */
 	protected function initWriter(){
 	}
-	
+
 	/**
 	 * Method called by BayEOSGatewayClient::run() 
 	 * 
