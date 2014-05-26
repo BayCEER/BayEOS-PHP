@@ -33,7 +33,7 @@ class PHPSerialRouter extends BayEOSGatewayClient{
 	protected function readData(){
 		if($data=$this->baySerial->getFrame()){
 			$this->read_error_count=0;
-			$data['frame'];
+			return $data['frame'];
 		}
 		$this->read_error_count++;
 		if($this->read_error_count>2){
