@@ -100,16 +100,16 @@ class XBee extends phpSerial {
         		$index=$i+$offset;
         		if(! isset($this->stack[$index]['ts']))
         			$this->stack[$index]['ts']=microtime(TRUE);
-        		if(! isset($this->stack[$index]['frame'])) 
-        			$this->stack[$index]['frame']='';
-        		$this->stack[$index]['frame'].=$this->_unescape($data[$i]);
-        		//echo "Stack[$index]: ".array_pop(unpack('H*',$this->stack[$index]['frame']))."\n";
+        		if(! isset($this->stack[$index]['rawframe'])) 
+        			$this->stack[$index]['rawframe']='';
+        		$this->stack[$index]['rawframe'].=$data[$i];
+        		$this->stack[$index]['frame']=$this->_unescape($this->stack[$index]['rawframe']);
         		$this->stack[$index]['ok']=$this->_parseFrame($this->stack[$index]['frame']);
 				if(! $this->stack[$index]['ok'] && ($i+1)<count($data)){
 					//Invalid Frame!
-					echo "Invalid Frame\n";
 					unset($this->stack[$index]);
 					$offset--; 
+			       	fwrite(STDERR,date('Y-m-d H:i:s').' '.$this->_device." : Invalid frame\n");
 				}
         	}
         	
@@ -195,7 +195,8 @@ class XBee extends phpSerial {
         		if($rawData[$i]===XBEE_ESCAPE){
         			//echo "got escape!!\n";
         			$i++;
-        			$res.=pack("C",0x20) ^ $rawData[$i];
+        			if($i<strlen($rawData))
+        				$res.=pack("C",0x20) ^ $rawData[$i];
         		} else $res.=$rawData[$i];
         	}
         	//echo "Unescape: ".array_pop(unpack('H*',$res))."\n";

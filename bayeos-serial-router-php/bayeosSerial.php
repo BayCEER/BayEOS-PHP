@@ -112,28 +112,40 @@ class BaySerial extends phpSerial {
         		$index=$i+$offset;
         		if(! isset($this->stack[$index]['ts']))
         			$this->stack[$index]['ts']=microtime(TRUE);
-        		if(! isset($this->stack[$index]['frame'])) 
-        			$this->stack[$index]['frame']='';
-        		$this->stack[$index]['frame'].=$this->_unescape($data[$i]);
+        		if(! isset($this->stack[$index]['rawframe'])) 
+        			$this->stack[$index]['rawframe']='';
+        		$this->stack[$index]['rawframe'].=$data[$i];
+        		$this->stack[$index]['frame']=$this->_unescape($this->stack[$index]['rawframe']);
         		//echo "Stack[$index]: ".array_pop(unpack('H*',$this->stack[$index]['frame']))."\n";
-        		$this->stack[$index]['ok']=$this->_parseFrame($this->stack[$index]['frame']);
-				if(! $this->stack[$index]['ok'] && ($i+1)<count($data)){
-					//Invalid Frame!
-					echo "Invalid Frame\n";
+       			switch($this->_parseFrame($this->stack[$index]['frame'])){
+       				case 0: 
+       					$this->stack[$index]['ok']=TRUE;
+       					break;
+       				case 1:
+       					unset($this->stack[$index]);
+			       		fwrite(STDERR,date('Y-m-d H:i:s').' '.$this->_device." : Checksum failure\n");
+        				$offset--;
+       					break;
+       				case 2:
+       					$this->stack[$index]['ok']=FALSE;
+       					break;      				
+       			}
+				if(isset($this->stack[$index]) && ! $this->stack[$index]['ok'] && ($i+1)<count($data)){
 					unset($this->stack[$index]);
 					$offset--; 
+			       	fwrite(STDERR,date('Y-m-d H:i:s').' '.$this->_device." : Incomplete frame\n");
 				}
         	}
         	
         	$anz=count($this->stack);
 			//echo "Stackcount: $anz\n";
-        	if(! $this->stack[$anz-1]['ok']) $anz--;
+        	if($anz && ! $this->stack[$anz-1]['ok']) $anz--;
         	return $anz;
         }
         
         
         private function _parseFrame($frame){
-        	if(strlen($frame)<3) return FALSE;
+        	if(strlen($frame)<3) return 2;
         	//echo "PARSE: ".array_pop(unpack('H*',$frame))."\n";
         	$length = substr($frame, 0, 1);
          	$checksum = substr($frame, -1);
@@ -145,13 +157,12 @@ class BaySerial extends phpSerial {
         	if ($checksum === $calculatedChecksum && $length === $calculatedLength) {
         		//echo "Frame OK\n";
         		$this->_sendAck(TX_OK);
-        		return TRUE;
+        		return 0;
         	} else if($length === $calculatedLength) {
-        		echo "Checksum failure\n";
         		$this->_sendAck(TX_CHECKSUM_FAILED);
-        		return FALSE;
+        		return 1;
         	} else {
-        		return FALSE;
+        		return 2;
         	}
         	 
         }
@@ -213,7 +224,8 @@ class BaySerial extends phpSerial {
         		if($rawData[$i]===XBEE_ESCAPE){
         			//echo "got escape!!\n";
         			$i++;
-        			$res.=pack("C",0x20) ^ $rawData[$i];
+        			if($i<strlen($rawData))
+        				$res.=pack("C",0x20) ^ $rawData[$i];
         		} else $res.=$rawData[$i];
         	}
         	//echo "Unescape: ".array_pop(unpack('H*',$res))."\n";
