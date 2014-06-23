@@ -91,7 +91,7 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		if($this->datetime_format){
 			$pos=strpos($line,$this->delim);
 			$ts=substr($line,0,$pos);
-		//	echo $this->delim"\n";
+		//	echo $this->delim."\n";
 			$line=substr($line,$pos+1);
 			$ts_obj=DateTime::createFromFormat($this->datetime_format,$ts,new DateTimeZone($this->tz));
 			if(! $ts_obj){
