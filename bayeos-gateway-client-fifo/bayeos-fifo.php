@@ -38,23 +38,6 @@ class BayEOSFifo extends BayEOSGatewayClient {
 	private $tz;
 	private $pid_script;
 	
-	/*
-	 * constructor
-	*/
-	function __construct($names,$options=array()){
-		$defaults=array('data_type'=>0x41,
-						'delim'=>' ',
-						'dec'=>'.',
-						'tz'=>date_default_timezone_get());
-		while(list($key,$value)=each($defaults)){
-			if(! isset($options[$key])){
-				echo "Option '$key' not set using default: ".(is_array($value)?implode(', ',$value):$value)."\n";
-				$options[$key]=$value;
-			}
-		}
-		parent::__construct($names,$options);
-	}
-	
 	protected function readData(){
 		//echo "readData called\n";
 		$timeout=$this->getOption('timeout',120);
@@ -184,7 +167,11 @@ class BayEOSFifo extends BayEOSGatewayClient {
 
 
 
-$my_client = new BayEOSFifo($names,$config);
+$my_client = new BayEOSFifo($names,$config,
+		array('data_type'=>0x41,
+		'delim'=>' ',
+		'dec'=>'.',
+		'tz'=>date_default_timezone_get()));
 $my_client->run();
 
 

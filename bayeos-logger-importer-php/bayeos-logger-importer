@@ -1,22 +1,22 @@
 #!/bin/sh
-# Start/stop the bayeos-socket readout daemon.
+# Start/stop the bayeos-logger-importer readout daemon.
 #
 ### BEGIN INIT INFO
-# Provides:          bayeos-socket
+# Provides:          bayeos-logger-importer
 # Required-Start:    $local_fs $remote_fs $network $syslog $named 
 # Required-Stop:     $local_fs $remote_fs $network $syslog $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start bayeos-socket readout script
-# Description:       bayeos-socket takes a socket to read data
+# Short-Description: Start bayeos-logger-importer readout script
+# Description:       Start simple BayEOS data collecting processes 
 ### END INIT INFO
 
 
 
-test -f /usr/sbin/bayeos-socket_start.sh || exit 0
+test -f /usr/sbin/bayeos-logger-importer_start.sh || exit 0
 
-PIDFILE=/var/run/bayeos-socket.pid
-[ -r /etc/default/bayeos-socket ] && . /etc/default/bayeos-socket
+PIDFILE=/var/run/bayeos-logger-importer.pid
+[ -r /etc/default/bayeos-logger-importer ] && . /etc/default/bayeos-logger-importer
 
 . /lib/lsb/init-functions
 
@@ -54,21 +54,21 @@ fi
 
 
 case "$1" in
-start)	log_daemon_msg "Starting BayEOS socket" "bayeos-socket"
-        start-stop-daemon --start --quiet --oknodo --make-pidfile --pidfile $PIDFILE  --name bayeos-socket --background\
-        --exec /usr/sbin/bayeos-socket_start.sh  
+start)	log_daemon_msg "Starting bayeos-logger-importer" "bayeos-logger-importer"
+        start-stop-daemon --start --quiet --oknodo --make-pidfile --pidfile $PIDFILE  --name bayeos-logger --background\
+        --exec /usr/sbin/bayeos-logger-importer_start.sh  
         log_end_msg $?
 	;;
-stop)	log_daemon_msg "Stopping bayeos-socket" "bayeos-socket"
+stop)	log_daemon_msg "Stopping bayeos-logger-importer" "bayeos-logger-importer"
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE
         log_end_msg $?
         ;;
-restart) log_daemon_msg "Restarting bayeos-socket" "bayeos-socket"
+restart) log_daemon_msg "Restarting bayeos-logger-importer" "bayeos-logger-importer"
 	$0 stop
 	$0 start
         ;;
 status)
-       log_action_begin_msg "Checking bayeos-socket " 
+       log_action_begin_msg "Checking bayeos-logger-importer " 
        if pidofproc -p "$PIDFILE" >/dev/null; then
             log_action_end_msg 0 "running"
             exit 0
@@ -82,7 +82,7 @@ status)
            fi
        fi
          ;;
-*)	log_action_msg "Usage: /etc/init.d/bayeos-socket {start|stop|status|restart}"
+*)	log_action_msg "Usage: /etc/init.d/bayeos-logger-importer {start|stop|status|restart}"
         exit 2
         ;;
 esac

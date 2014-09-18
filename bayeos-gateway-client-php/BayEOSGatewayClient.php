@@ -653,9 +653,13 @@ class BayEOSSender {
 		$res=explode("\n",$res);
 		for($i=0;$i<count($res);$i++){
 			if(preg_match('|^HTTP/1\\.[0-9] 200 OK|i',$res[$i])) return 1;
+			elseif(preg_match('|^HTTP/1\\.[0-9] 4|i',$res[$i],$matches)){
+				fwrite(STDERR, date('Y-m-d H:i:s')." Post Error: $res[$i]\n");
+				return 0;
+			}
 		}
-		fwrite(STDERR, date('Y-m-d H:i:s')." Post Error: $res[0]\n");
 		return 0;
+		
 	}
 	
 	
@@ -689,7 +693,7 @@ class BayEOSGatewayClient{
  *  It is not possilbe to mix forms for one key!!
  *  
  */	
-function __construct($names,$options=array()){
+function __construct($names,$options=array(),$defaults=array()){
 		if(! is_array($names) && $names)
 			$names=array($names);
 		if(count(array_unique($names))<count($names))
@@ -709,7 +713,7 @@ function __construct($names,$options=array()){
 	 		$sender_defaults[$i]=$prefix.$names[$i];
 		}
 		
-		$defaults=array('writer_sleep_time'=>15,
+		$defaults=array_merge($defaults,array('writer_sleep_time'=>15,
 					'max_chunk'=>5000,
 					'max_time'=>60,
 					'data_type'=>0x1,
@@ -719,7 +723,7 @@ function __construct($names,$options=array()){
 					'bayeosgateway_version'=>'1.9',
 					'absolute_time'=>TRUE,
 					'rm'=>TRUE,
-					'tmp_dir'=>sys_get_temp_dir());
+					'tmp_dir'=>sys_get_temp_dir()));
 		while(list($key,$value)=each($defaults)){
 			if(! isset($options[$key])){
 				echo "Option '$key' not set using default: ".(is_array($value)?implode(', ',$value):$value)."\n";

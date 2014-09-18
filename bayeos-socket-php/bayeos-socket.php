@@ -24,19 +24,6 @@ class PHPSocketRouter extends BayEOSGatewayClient{
 	private $tz;
 	private $fp;
 	
-	function __construct($names,$options=array()){
-		$defaults=array('data_type'=>0x41,
-						'delim'=>' ',
-						'dec'=>'.',
-						'tz'=>date_default_timezone_get());
-		while(list($key,$value)=each($defaults)){
-			if(! isset($options[$key])){
-				echo "Option '$key' not set using default: ".(is_array($value)?implode(', ',$value):$value)."\n";
-				$options[$key]=$value;
-			}
-		}
-		parent::__construct($names,$options);
-	}
 	//Init Writer
 	protected function initWriter(){
 		$this->socket=$this->getOption('socket');
@@ -97,7 +84,11 @@ class PHPSocketRouter extends BayEOSGatewayClient{
 }
 
 
-$my_client = new PHPSocketRouter($names,$config);
+$my_client = new PHPSocketRouter($names,$config,
+		array('data_type'=>0x41,
+						'delim'=>' ',
+						'dec'=>'.',
+						'tz'=>date_default_timezone_get());
 $my_client->run();
 
 ?>

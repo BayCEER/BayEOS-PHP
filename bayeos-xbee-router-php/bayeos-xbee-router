@@ -7,7 +7,7 @@
 # Required-Stop:     $local_fs $remote_fs $network $syslog $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start bayeos-xbee-router modbus readout script
+# Short-Description: Start bayeos-xbee-router readout script
 # Description:       xbees connected via USB are read out
 ### END INIT INFO
 
