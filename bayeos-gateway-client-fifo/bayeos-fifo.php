@@ -37,6 +37,7 @@ class BayEOSFifo extends BayEOSGatewayClient {
 	private $datetime_format;
 	private $tz;
 	private $pid_script;
+	private $origin;
 	
 	protected function readData(){
 		//echo "readData called\n";
@@ -71,10 +72,15 @@ class BayEOSFifo extends BayEOSGatewayClient {
 
 	protected function parseData($line){
 		$ts='';
+		$origin='';
+		if($this->origin){
+			$pos=strpos($line,$this->delim);
+			$origin=substr($line,0,$pos);
+			$line=substr($line,$pos+1);
+		}
 		if($this->datetime_format){
 			$pos=strpos($line,$this->delim);
 			$ts=substr($line,0,$pos);
-		//	echo $this->delim."\n";
 			$line=substr($line,$pos+1);
 			$ts_obj=DateTime::createFromFormat($this->datetime_format,$ts,new DateTimeZone($this->tz));
 			if(! $ts_obj){
@@ -89,12 +95,17 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		for($i=0;$i<count($data);$i++){
 			if(! is_numeric($data[$i])) unset($data[$i]);
 		}
-		return array('values'=>$data,'ts'=>$ts);
+		return array('values'=>$data,'ts'=>$ts,'origin'=>$origin);
 	}
 	
 	protected function saveData($data){
 		//save data with timestamp
-		$this->writer->saveDataFrame($data['values'],$this->getOption('data_type'),0,$data['ts']);
+		if($data['origin'])
+			$this->writer->saveOriginFrame($data['origin'],
+				BayEOS::createDataFrame($data['values'],$this->getOption('data_type'),0),
+				$data['ts']);
+		else 
+			$this->writer->saveDataFrame($data['values'],$this->getOption('data_type'),0,$data['ts']);
 	}
 	
 	private function termChilds($pid){
@@ -118,7 +129,8 @@ class BayEOSFifo extends BayEOSGatewayClient {
 			die("Failed to create $fifo.error_fifo\n");
 
 		$script=$this->getOption('script');
-		if(! is_executable($script))
+		$tmp=explode(" ",$script);
+		if(! (is_executable($script) || is_executable($tmp[0])))
 			die("$script is not executable\n");
 
 		//Start the script
@@ -152,11 +164,12 @@ class BayEOSFifo extends BayEOSGatewayClient {
 			$this->dec=$this->getOption('dec');
 			$this->tz=$this->getOption('tz');
 			$this->datetime_format=$this->getOption('datetime_format');
+			$this->origin=$this->getOption('origin');
 				
 			
 		} else {
 			// We are child:
-			exec("$script >".$this->data_fifo." 2>".$this->error_fifo);
+			exec("$script >".$this->data_fifo." 2>".$this->error_fifo." </dev/null");
 			exit();
 		}
 
@@ -171,6 +184,7 @@ $my_client = new BayEOSFifo($names,$config,
 		array('data_type'=>0x41,
 		'delim'=>' ',
 		'dec'=>'.',
+		'origin'=>FALSE,
 		'tz'=>date_default_timezone_get()));
 $my_client->run();
 
