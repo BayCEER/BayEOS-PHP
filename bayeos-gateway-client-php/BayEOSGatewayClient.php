@@ -642,7 +642,7 @@ class BayEOSSender {
 		$ch=curl_init($this->url);
 		curl_setopt($ch,CURLOPT_POST,1);
 		curl_setopt($ch,CURLOPT_TIMEOUT,120);
-		curl_setopt($ch,CURLOPT_CONNECTIONTIMEOUT, 30);
+		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
 		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.6');
