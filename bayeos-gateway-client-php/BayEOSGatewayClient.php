@@ -188,7 +188,7 @@ class BayEOS {
  * @return string (binary)
  */
 	public static function createDataFrame($values,$type=0x1,$offset=0){
-		$bayeos_frame=pack("C2",0x1,$type);
+		$bayeos_frame=pack("C2",0x1,intval($type,0));
 		//Extract offset and data type
 		$offset_type=(0xf0 & $type);
 		$data_type=(0x0f & $type);
@@ -641,20 +641,26 @@ class BayEOSSender {
 		//echo "POST:".$this->url.'-'.$this->pw.'-'.$this->user."\n$data\n";
 		$ch=curl_init($this->url);
 		curl_setopt($ch,CURLOPT_POST,1);
+		curl_setopt($ch,CURLOPT_TIMEOUT,120);
+		curl_setopt($ch,CURLOPT_CONNECTIONTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.4');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.6');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
 		$res=curl_exec($ch);
 		//echo "CURL-res: $res\n";
 		curl_close($ch);
+		if($res===FALSE){
+			fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." curl_exec failed\n");
+			return 0;
+		}
 		$res=explode("\n",$res);
 		for($i=0;$i<count($res);$i++){
 			if(preg_match('|^HTTP/1\\.[0-9] 200 OK|i',$res[$i])) return 1;
 			elseif(preg_match('|^HTTP/1\\.[0-9] 4|i',$res[$i],$matches)){
-				fwrite(STDERR, date('Y-m-d H:i:s')." Post Error: $res[$i]\n");
+				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
 				return 0;
 			}
 		}
@@ -713,7 +719,7 @@ function __construct($names,$options=array(),$defaults=array()){
 	 		$sender_defaults[$i]=$prefix.$names[$i];
 		}
 		
-		$defaults=array_merge($defaults,array('writer_sleep_time'=>15,
+		$defaults=array_merge(array('writer_sleep_time'=>15,
 					'max_chunk'=>5000,
 					'max_time'=>60,
 					'data_type'=>0x1,
@@ -723,7 +729,7 @@ function __construct($names,$options=array(),$defaults=array()){
 					'bayeosgateway_version'=>'1.9',
 					'absolute_time'=>TRUE,
 					'rm'=>TRUE,
-					'tmp_dir'=>sys_get_temp_dir()));
+					'tmp_dir'=>sys_get_temp_dir()),$defaults);
 		while(list($key,$value)=each($defaults)){
 			if(! isset($options[$key])){
 				echo "Option '$key' not set using default: ".(is_array($value)?implode(', ',$value):$value)."\n";

@@ -38,6 +38,8 @@ class BayEOSFifo extends BayEOSGatewayClient {
 	private $tz;
 	private $pid_script;
 	private $origin;
+	private $indexed_frame;
+	private $data_type;
 	
 	protected function readData(){
 		//echo "readData called\n";
@@ -91,9 +93,21 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		}
 		
 		if($this->dec!='.') $line=str_replace($this->dec,'.',$line);
-		$data=explode($this->delim,trim($line));
-		for($i=0;$i<count($data);$i++){
-			if(! is_numeric($data[$i])) unset($data[$i]);
+		$tmp=explode($this->delim,trim($line));
+		$data=array();
+		for($i=0;$i<count($tmp);$i++){
+			if($this->indexed_frame){
+				list($key,$value)=explode(':',$tmp[$i]);
+				$key=intval($key);
+				if(! is_numeric($key))
+					fwrite(STDERR, date('Y-m-d H:i:s')."Non numeric key '$key'\n");
+				else
+					$data[$key]=$value;
+			} elseif($this->data_type<65) {
+				$data[$i]=(is_numeric($tmp[$i])?$tmp[$i]:NAN);
+			} elseif(is_numeric($tmp[$i]))
+				$data[$i]=$tmp[$i];
+				
 		}
 		return array('values'=>$data,'ts'=>$ts,'origin'=>$origin);
 	}
@@ -102,12 +116,13 @@ class BayEOSFifo extends BayEOSGatewayClient {
 		//save data with timestamp
 		if($data['origin'])
 			$this->writer->saveOriginFrame($data['origin'],
-				BayEOS::createDataFrame($data['values'],$this->getOption('data_type'),0),
+				BayEOS::createDataFrame($data['values'],$this->data_type,0),
 				$data['ts']);
 		else 
-			$this->writer->saveDataFrame($data['values'],$this->getOption('data_type'),0,$data['ts']);
+			$this->writer->saveDataFrame($data['values'],$this->data_type,0,$data['ts']);
 	}
 	
+	//private function to recursively find all childs 
 	private function termChilds($pid){
 		exec("pgrep -P $pid",$res);
 		if($res[0]) $this->termChilds($res[0]);
@@ -161,11 +176,18 @@ class BayEOSFifo extends BayEOSGatewayClient {
 			stream_set_blocking($this->fp_error, false);
 			echo date('Y-m-d H:i:s')." Started script $script for $name with pid $pid\n";
 			$this->delim=$this->getOption('delim');
+			if($this->delim=='\t') $this->delim="\t";
 			$this->dec=$this->getOption('dec');
 			$this->tz=$this->getOption('tz');
 			$this->datetime_format=$this->getOption('datetime_format');
 			$this->origin=$this->getOption('origin');
-				
+			$this->indexed_frame=$this->getOption('indexed_frame');
+			$this->data_type=intval($this->getOption('data_type'),0);
+			if($this->indexed_frame && $this->data_type<64){
+				echo date('Y-m-d H:i:s')." Notice: data_type ".$this->data_type.
+				" does not support indexed frames. Will use ".(($this->data_type&0xf)|0x40)." instead\n";
+				$this->data_type=($this->data_type&0xf)|0x40;
+			}	
 			
 		} else {
 			// We are child:
@@ -181,7 +203,7 @@ class BayEOSFifo extends BayEOSGatewayClient {
 
 
 $my_client = new BayEOSFifo($names,$config,
-		array('data_type'=>0x41,
+		array('data_type'=>0x1,
 		'delim'=>' ',
 		'dec'=>'.',
 		'origin'=>FALSE,

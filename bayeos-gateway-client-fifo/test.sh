@@ -8,6 +8,6 @@ do
       echo "Test-Error" 1>&2
 	  count=1
   else
-	  echo "1 5 $count"
+	  echo "1 5 NAN $count"
    fi
 done
