@@ -12,17 +12,17 @@
 ### END INIT INFO
 
 
-
-test -f /usr/sbin/bayeos-serial-router_start.sh || exit 0
-
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DESC="bayeos-serial router daemon"
+NAME=serial-router
+DAEMON=/usr/sbin/bayeos-serial-router_start.sh
 PIDFILE=/var/run/bayeos-serial-router.pid
-[ -r /etc/default/bayeos-serial-router ] && . /etc/default/bayeos-serial-router
+SCRIPTNAME=/etc/init.d/bayeos-serial-router
+
+test -f $DAEMON || exit 0
 
 . /lib/lsb/init-functions
 
-
-# We read /etc/environment, but warn about locale information in
-# there because it should be in /etc/default/locale.
 parse_environment () 
 {
     for ENV_FILE in /etc/environment /etc/default/locale; do
@@ -47,43 +47,34 @@ parse_environment ()
 
 # Parse the system's environment
 if [ "$READ_ENV" = "yes" ] ; then
-    export LANG LC_ALL LC_CTYPE TZ LC_COLLATE
     parse_environment
-    LC_COLLATE=C # Force collation sequence since ASCII is expected in regexps
 fi
 
 
 case "$1" in
-start)	log_daemon_msg "Starting serial-router" "serial-router"
-        start-stop-daemon --start --quiet --oknodo --make-pidfile --pidfile $PIDFILE  --name serial-router --background\
-        --exec /usr/sbin/bayeos-serial-router_start.sh  
+start)	log_daemon_msg "Starting $NAME" 
+		[ -e "$PIDFILE" ] && status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || rm -f $PIDFILE
+        start-stop-daemon --start --quiet --oknodo --make-pidfile --pidfile $PIDFILE  --name $NAME --background\
+        --exec $DAEMON 
         log_end_msg $?
 	;;
-stop)	log_daemon_msg "Stopping serial-router" "serial-router"
-	start-stop-daemon --stop --quiet --pidfile $PIDFILE
-        log_end_msg $?
+stop)	log_daemon_msg "Stopping $NAME"
+		start-stop-daemon --stop --quiet --retry 60 --pidfile $PIDFILE
+   		 RETVAL=$?
+    	while ps -p `cat $PIDFILE` > /dev/null; do sleep 1; done
+    	[ $RETVAL -eq 0 ] && [ -e "$PIDFILE" ] && rm -f $PIDFILE
+    	log_end_msg $RETVAL 
         ;;
-restart) log_daemon_msg "Restarting serial-router" "serial-router"
-	$0 stop
-	$0 start
+restart) log_daemon_msg "Restarting $NAME" 
+        $0 stop
+        $0 start
         ;;
 status)
-       log_action_begin_msg "Checking serial-router " 
-       if pidofproc -p "$PIDFILE" >/dev/null; then
-            log_action_end_msg 0 "running"
-            exit 0
-       else
-           if [ -e "$PIDFILE" ]; then
-                log_action_end_msg 1 "failed to start"
-                exit 1
-           else
-                log_action_end_msg 0 "not running"
-                exit 3
-           fi
-       fi
-         ;;
-*)	log_action_msg "Usage: /etc/init.d/bayeos-serial-router {start|stop|status|restart}"
+        status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+        ;;
+*)	log_action_msg "Usage: /etc/init.d/bayeos-fifo {start|stop|status|restart}"
         exit 2
         ;;
 esac
 exit 0
+

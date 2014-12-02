@@ -1,5 +1,5 @@
 /var/log/bayeos-xbee-router/*.log {
-	dayly
+	daily
 	missingok
 	rotate 7
 	compress

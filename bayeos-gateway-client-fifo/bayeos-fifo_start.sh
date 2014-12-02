@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Runs node.js against script, logging to a logfile. We have to do
+# Runs php against script, logging to a logfile. We have to do
 # this because there's no way to call node directly and have start-stop-daemon
 # redirect stdout to a logfile.
 #
@@ -17,10 +17,19 @@ ${RUN} >>${LOGFILE} 2>>${ERRORFILE} </dev/null &
  
 # Capture the child process PID
 CHILD="$!"
+
+function finish {
+# Your cleanup code here
+	kill $CHILD
+	while ps -p $CHILD > /dev/null
+	do
+	  sleep 1;
+	done
+}
  
 # Kill the child process when start-stop-daemon sends us a kill signal
-trap "kill $CHILD" exit INT TERM
+trap finish INT TERM
  
 # Wait for child process to exit
 wait
-~
+

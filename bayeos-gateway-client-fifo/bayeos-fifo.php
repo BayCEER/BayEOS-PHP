@@ -125,8 +125,12 @@ class BayEOSFifo extends BayEOSGatewayClient {
 	//private function to recursively find all childs 
 	private function termChilds($pid){
 		exec("pgrep -P $pid",$res);
-		if($res[0]) $this->termChilds($res[0]);
+		if(isset($res[0])) $this->termChilds($res[0]);
 		posix_kill($pid,SIGTERM);
+		$res2=pcntl_waitpid($pid,$status);
+		
+		echo date('Y-m-d H:i:s')." Terminated ".($pid==$this->pid_script?"sript":"child of").' '.$this->getOption('script').
+		" of ".$this->name." with pid ".$pid."\n";
 	}
 	
 	protected function initWriter(){
@@ -161,8 +165,8 @@ class BayEOSFifo extends BayEOSGatewayClient {
 				switch ($signo) {
 					case SIGTERM:
 						// Aufgaben zum Beenden bearbeiten
-						echo date('Y-m-d H:i:s')." Stopping script ".$this->getOption('script')." for ".$this->name[$this->i]." with pid ".$this->pid_script."\n";
 						$this->termChilds($this->pid_script);
+						echo date('Y-m-d H:i:s')." Script ".$this->getOption('script')." for ".$this->name." with pid ".$this->pid_script." terminated.\n";
 						exit();
 					break;
 				}
@@ -207,6 +211,7 @@ $my_client = new BayEOSFifo($names,$config,
 		'delim'=>' ',
 		'dec'=>'.',
 		'origin'=>FALSE,
+		'indexed_frame'=>FALSE,
 		'tz'=>date_default_timezone_get()));
 $my_client->run();
 

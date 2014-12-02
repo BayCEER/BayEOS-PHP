@@ -88,6 +88,7 @@ class PHPXBeeRouter extends BayEOSGatewayClient{
 		$this->read_error_count++;
 		if($this->read_error_count>$this->getOption('maxerror_before_reopen',2)){
 			$this->closeDevice();
+			fwrite(STDERR,date('Y-m-d H:i:s').': '.$this->name.': Reopening device'."\n");
 			$this->openDevice();
 			$this->read_error_count=0;
 		}

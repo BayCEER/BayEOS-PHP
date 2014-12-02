@@ -614,10 +614,12 @@ class BayEOSSender {
 		fclose($fp);
 		if($frames){
 			//Frames to post...
-			if($this->post($data.$frames)){
+			if($res=$this->post($data.$frames)){
 				//Post successful
-				if($this->rm) unlink($files[0]);
-				else rename($files[0],str_replace('.rd','.bak',$files[0]));
+				if($this->rm && $res==1) unlink($files[0]); 			
+				if($res==2) fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".
+						str_replace('.rd','.bak',$files[0])."\n");
+				if(is_writable($files[0])) rename($files[0],str_replace('.rd','.bak',$files[0]));
 				return $count;
 			}
 		} else {
@@ -645,7 +647,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.6');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.7');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -662,6 +664,10 @@ class BayEOSSender {
 			elseif(preg_match('|^HTTP/1\\.[0-9] 4|i',$res[$i],$matches)){
 				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
 				return 0;
+			}
+			elseif(preg_match('|^HTTP/1\\.[0-9] 5|i',$res[$i],$matches)){
+				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
+				return 2;
 			}
 		}
 		return 0;
@@ -836,13 +842,20 @@ function __construct($names,$options=array(),$defaults=array()){
 				case SIGTERM:
 					// Aufgaben zum Beenden bearbeiten
 					for($i=0;$i<count($this->pid_w);$i++){
-						echo date('Y-m-d H:i:s')." Stopping writer for ".$this->names[$i]." with pid ".$this->pid_w[$i]."\n";
 						posix_kill($this->pid_w[$i],SIGTERM);
+						$res=pcntl_waitpid($this->pid_w[$i],$status);
+						echo date('Y-m-d H:i:s')." Stopping writer for ".$this->names[$i]." with pid ".$this->pid_w[$i].': '.
+							($res>0?'ok':'failed')."\n";
+						
 					}
 					for($i=0;$i<count($this->pid_r);$i++){
-						echo date('Y-m-d H:i:s')." Stopping sender for ".$this->names[$i]." with pid ".$this->pid_r[$i]."\n";
 						posix_kill($this->pid_r[$i],SIGTERM);
+						$res=pcntl_waitpid($this->pid_r[$i],$status);
+						echo date('Y-m-d H:i:s')." Stopping sender for ".$this->names[$i]." with pid ".$this->pid_r[$i].": ".
+							($res>0?'ok':'failed')."\n";
 					}
+					echo date('Y-m-d H:i:s')." Stopping main process\n";
+								
 					exit;
 					break;
 			}
