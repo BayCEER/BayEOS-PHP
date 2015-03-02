@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Runs node.js against script, logging to a logfile. We have to do
 # this because there's no way to call node directly and have start-stop-daemon

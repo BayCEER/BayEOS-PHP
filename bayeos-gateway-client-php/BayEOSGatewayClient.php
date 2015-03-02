@@ -616,10 +616,14 @@ class BayEOSSender {
 			//Frames to post...
 			if($res=$this->post($data.$frames)){
 				//Post successful
-				if($this->rm && $res==1) unlink($files[0]); 			
-				if($res==2) fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".
+				if($res==1){
+					if($this->rm) unlink($files[0]);
+					else rename($files[0],str_replace('.rd','.bak',$files[0]));
+				} elseif($res==2){
+					fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".
 						str_replace('.rd','.bak',$files[0])."\n");
-				if(is_writable($files[0])) rename($files[0],str_replace('.rd','.bak',$files[0]));
+					rename($files[0],str_replace('.rd','.bak',$files[0]));
+				}
 				return $count;
 			}
 		} else {
@@ -647,7 +651,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.7');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.8');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -661,13 +665,13 @@ class BayEOSSender {
 		$res=explode("\n",$res);
 		for($i=0;$i<count($res);$i++){
 			if(preg_match('|^HTTP/1\\.[0-9] 200 OK|i',$res[$i])) return 1;
-			elseif(preg_match('|^HTTP/1\\.[0-9] 4|i',$res[$i],$matches)){
-				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
-				return 0;
-			}
-			elseif(preg_match('|^HTTP/1\\.[0-9] 5|i',$res[$i],$matches)){
+			elseif(preg_match('|^HTTP/1\\.[0-9] 500|i',$res[$i],$matches)){
 				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
 				return 2;
+			}
+			elseif(preg_match('|^HTTP/1\\.[0-9] [45]|i',$res[$i],$matches)){
+				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
+				return 0;
 			}
 		}
 		return 0;
