@@ -10,8 +10,8 @@ while(TRUE){
 	echo "adding frame\n";
 	$w->saveDataFrame(
 			array($count++,
-			1,
-			1.0));
+			300,
+			1.0),0x04,4);
 	sleep(5);
 }
 

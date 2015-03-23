@@ -4,7 +4,11 @@
 	rotate 7
 	compress
 	delaycompress
-	postrotate
-		/etc/init.d/bayeos-xbee-router restart > /dev/null
-	endscript
+# New default is copytruncate
+# may result in some loss of logging information
+# alternative is to run postrotate
+	copytruncate
+#	postrotate
+#		/etc/init.d/bayeos-xbee-router restart > /dev/null
+#	endscript
 }
