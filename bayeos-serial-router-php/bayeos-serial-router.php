@@ -8,6 +8,7 @@ require 'BayEOSGatewayClient.php';
  */
 $config=parse_ini_file('/etc/bayeos-serial-router.ini');
 $config['writer_sleep_time']=0;
+
 if(! isset($config['names'])){
 	$names=array();
 	for($i=0;$i<count($config['device']);$i++){
@@ -102,7 +103,7 @@ class PHPSerialRouter extends BayEOSGatewayClient{
 }
 
 
-$my_client = new PHPSerialRouter($names,$config);
+$my_client = new PHPSerialRouter($names,$config,array('sleep_between_childs'=>1));
 $my_client->run();
 
 ?>

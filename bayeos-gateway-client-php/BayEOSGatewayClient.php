@@ -651,7 +651,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.8');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.9');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -739,6 +739,7 @@ function __construct($names,$options=array(),$defaults=array()){
 					'bayeosgateway_version'=>'1.9',
 					'absolute_time'=>TRUE,
 					'rm'=>TRUE,
+					'sleep_between_childs'=>0,
 					'tmp_dir'=>sys_get_temp_dir()),$defaults);
 		while(list($key,$value)=each($defaults)){
 			if(! isset($options[$key])){
@@ -812,6 +813,7 @@ function __construct($names,$options=array(),$defaults=array()){
 			} else if ($this->pid_r[$i]) {
 				// We are the parent
 				echo date('Y-m-d H:i:s')." Started sender for ".$this->name." with pid ".$this->pid_r[$i]."\n";
+				sleep($this->getOption('sleep_between_childs'));
 			} else {
 				// We are child:
 				//Start sender and run it...
