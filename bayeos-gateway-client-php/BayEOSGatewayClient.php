@@ -280,7 +280,7 @@ class BayEOS {
 				break;
 			case 0xb:
 				$length=BayEOSType::unpackUINT8(substr($frame,1,1));
-				$origin.='/'.substr($frame,2,$length);
+				$origin=substr($frame,2,$length);
 				return BayEOS::parseFrame(substr($frame,$length+2),$ts,$origin,$rssi);
 			case 0xc:
 				$ts=array_pop(unpack('d',substr($frame,1,8)));
@@ -403,6 +403,29 @@ class BayEOSWriter {
 		$this->saveFrame(BayEOS::createDataFrame($values,$type,$offset),$ts);
 	}
 
+/**
+ * Save Data Frame wrapped in Origin Frame
+ * 
+ * @param string $origin 
+ *  is the name to appear in the gateway
+ * @param array $value
+ *  in the form ('channel_number'=>'value',...)
+ * @param int $type
+ *  valid bayeos data frame type number
+ * @param int offset
+ *  offset parameter for bayeos data frames (not relevant for all types)
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ * 
+*/
+	function saveOriginDataFrame($origin,$values,$type=0x1,$offset=0,$ts=0){
+		$origin=substr($origin,0,255);
+		$this->saveFrame(
+			pack("C",0xb). //Starting Byte
+			pack("C",strlen($origin)). //length of orginin string
+			$origin. //Origin String
+			BayEOS::createDataFrame($values,$type,$offset),$ts); 
+	}
 /**
  * Save Origin Frame
  * 
@@ -651,7 +674,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.9');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.10');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
