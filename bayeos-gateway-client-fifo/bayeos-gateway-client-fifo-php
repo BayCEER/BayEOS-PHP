@@ -7,7 +7,7 @@ Priority: optional
 Standards-Version: 3.9.2
 
 Package: bayeos-fifo-php
-Version: 1.0.9
+Version: 1.0.10
 Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
 # Pre-Depends: <comma-separated list of packages>
 Depends: bayeos-gateway-client-php (>= 1.0.5)
@@ -19,7 +19,7 @@ Depends: bayeos-gateway-client-php (>= 1.0.5)
 # Copyright: <copyright file; defaults to GPL2>
 # Changelog: <changelog file; defaults to a generic changelog>
 # Readme: <README.Debian file; defaults to a generic one>
-Extra-Files: test.sh, test_date.sh, test_origin.sh, test_indexed.sh
+Extra-Files: test.sh, test_date.sh, test_origin.sh, test_indexed.sh raspi-temp.sh
 Files: bayeos-fifo /etc/init.d/
  bayeos-fifo.ini /etc/
  logrotate.d/bayeos-fifo /etc/

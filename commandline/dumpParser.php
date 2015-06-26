@@ -14,7 +14,7 @@ if(count($argv)<2)
 	die_usage();
 
 for($i=1;$i<count($argv);$i++){
-	if(preg_match('/-[tsoekh]')){
+	if(preg_match('/-[tsoekh]/',$argv[$i])){
 		if($argv[$i]=='-h') die_usage();
 		$key=$argv[$i];
 		$i++;
@@ -24,7 +24,7 @@ for($i=1;$i<count($argv);$i++){
 		$file=$argv[$i];
 }
 if(! isset($options['-s'])) $options['-s']="2000-01-01";
-if(! isset($options['-e'])) $options['-e']=date('Y-m-d');
+if(! isset($options['-e'])) $options['-e']=date('Y-m-d',time()+24*3600);
 if(! isset($options['-k'])) $options['-k']="110";
 if(! isset($options['-o'])) $options['-o']="";
 
@@ -63,7 +63,7 @@ while(! feof($fp)){
 	$pos+=5+$length;
 	if($ts>$min && $ts<$max && $bayeosframe){
 		if($options['-o']=='text'){
-			$res=BayEOS::parseFrame($bayeosframe);
+			$res=BayEOS::parseFrame($bayeosframe,$ts+$ref_date->format('U'));
 			fwrite(STDOUT,"found frame: ".date('Y-m-d h:i:s',$ts+$ref_date->format('U'))." - ".($ts/3600)."\n");
 			print_r($res);
 		} elseif($options['-o']=='bin') {
@@ -71,7 +71,7 @@ while(! feof($fp)){
 		}
 		$found++;
 	}
-	fwrite(STDERR,"done: ".round($pos/$fsize*100,2)."% - found: $found $last_date\r");
+	fwrite(STDERR,"done: ".round($pos/$fsize*100,2)."% - found: $found ".strlen($bayeosframe)." $last_date\n");
 }
 
 

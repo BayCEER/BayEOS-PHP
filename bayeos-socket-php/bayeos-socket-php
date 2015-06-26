@@ -7,7 +7,7 @@ Priority: optional
 Standards-Version: 3.9.2
 
 Package: bayeos-socket-php
-Version: 1.0.3
+Version: 1.0.4
 Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
 # Pre-Depends: <comma-separated list of packages>
 Depends: bayeos-gateway-client-php (>= 1.0.5)
