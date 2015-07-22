@@ -10,9 +10,11 @@
  * 
  * Binary Packages for Debian Wheezy could be installed by adding
  * 
- * deb	http://www.bayceer.uni-bayreuth.de/edv/debian wheezy/
+ * deb	http://www.bayceer.uni-bayreuth.de/repos/apt/debian wheezy main 
  * 
- * to /etc/apt/sources.list
+ * to /etc/apt/sources.list and installing the key via
+ * 
+ * wget -O - http://www.bayceer.uni-bayreuth.de/repos/apt/conf/bayceer_repo.gpg.key |apt-key add -
  * 
  * @section sec1 Introduction
  * This classes allowes the user to build up own BayEOS-Device implementations in PHP
@@ -46,7 +48,17 @@
  * Example: \ref BayEOSSender.php
  *  
  * ***********************************************************************************
- * @subsection sec1_3 BayEOSGatewayClient
+ * 
+ * @subsection sec1_3 BayEOSSimpleClient-Class
+ * 
+ * BayEOSSimpleClient combines Write and Sender. The constructor automatically
+ * forks of one sender. Using BayEOSSimpleClient is probably the simpliest way to 
+ * write own scripts.
+ * 
+ * Example: \ref MySimpleClient.php
+ *  
+ * ***********************************************************************************
+ * @subsection sec1_4 BayEOSGatewayClient
  * 
  * BayEOSGatewayClient is a wrapper class. Only works on systems with fork! 
  * It forks two processes for each device: one writer, one sender
@@ -62,7 +74,7 @@
  * Example: \ref MyClient.php
  * 
  * ***********************************************************************************
- * @subsection sec1_4 BayEOSType-Class
+ * @subsection sec1_5 BayEOSType-Class
  * 
  * BayEOSType is a helper Class to do binary transformations...
  * 
@@ -386,6 +398,32 @@ class BayEOSWriter {
 
 
 
+/**
+ * Write a Frame to buffer
+ *
+ * @param array $value
+ *  in the form ('channel_number'=>'value',...)
+ * @param string $origin
+ *  Origin if set this will be the name of the board in the gateway
+ * @param int $type
+ *  valid bayeos data frame type number
+ * @param int offset
+ *  offset parameter for bayeos data frames (not relevant for all types)
+ * @param float $ts
+ * Unix epoch timestamp. If zero write uses system time
+ */
+	function save($values,$origin='',$type=0x41,$offset=0,$ts=0){
+		$frame=BayEOS::createDataFrame($values,$type,$offset);
+		if($origin){
+			$origin=substr($origin,0,255);
+			$frame=pack("C",0xb). //Starting Byte
+				pack("C",strlen($origin)). //length of orginin string
+				$origin. //Origin String
+				$frame;
+		}
+		$this->saveFrame($frame,$ts);
+	}
+	
 
 /**
  * Write a dataFrame to the buffer
@@ -558,8 +596,10 @@ class BayEOSSender {
  *  if set to false, relative time is used (delay)
  * @param bool $rm
  *  If set to false files are kept as .bak file in the BayEOSWriter directory 
+ * @param int $sleep_time
+ *  sleep_time of the sender when run as thread 
 */
-	function __construct($path,$name,$url,$pw,$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9'){
+	function __construct($path,$name,$url,$pw='import',$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9',$sleep_time=10){
 		if(! filter_var($url, FILTER_VALIDATE_URL))
 			die("URL '$url' not valid\n");
 		if(! $pw)
@@ -573,6 +613,7 @@ class BayEOSSender {
 		$this->absolute_time=$absolute_time;
 		$this->rm=$rm;
 		$this->gateway_version=$gateway_version;
+		$this->sleep_time=$sleep_time;
 	}
 
 /**
@@ -701,6 +742,21 @@ class BayEOSSender {
 		
 	}
 	
+/**
+ * 
+ * the run method when called as thread
+ * 
+ */	
+	public function run(){
+		while(TRUE){
+			$c = $this->send();
+			if($c){
+				echo date('Y-m-d H:i:s')." ".$this->name.": Successfully sent $c frames\n";
+			}
+			sleep($this->sleep_time);
+		}
+	
+	}
 	
 	private $path;
 	private $url;
@@ -710,10 +766,81 @@ class BayEOSSender {
 	private $absolute_time;
 	private $rm;
 	private $gateway_version;
+	private $sleep_time;
 	
 }
 
 
+class BayEOSSimpleClient extends BayEOSWriter{
+/**
+ * Constructor for a BayEOS-Sender
+ * 
+ * @param string $path
+ *  Path where BayEOSWriter puts files
+ * @param string $name
+ *  Sender name
+ * @param string $url
+ * 	GatewayURL e.g. http://<gateway>/gateway/frame/saveFlat
+ * @param string $pw
+ * 	Password on gateway
+ * @param string $user
+ *  User on gateway
+ * @param bool $absolute_time
+ *  if set to false, relative time is used (delay)
+ * @param bool $rm
+ *  If set to false files are kept as .bak file in the BayEOSWriter directory 
+ * @param int $sleep_time
+ *  sleep time of the sender when run as thread 
+*/
+	function __construct($path,$name,$url,$pw='import',$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9',$sleep_time=10){
+		$this->sender = new BayEOSSender($path,$name,$url,$pw,$user,$absolute_time,$rm,$gateway_version,$sleep_time);
+		BayEOSWriter::__construct($path);
+		$this->startSender();	
+		
+	}
+
+	function startSender(){
+		if($this->sender_pid){
+			fwrite(STDERR,date('Y-m-d H:i:s')." Sender is running with pid ".$this->sender_pid."\n");
+			return;
+		}
+		$pid = pcntl_fork();
+		if ($pid == -1) {
+			die('Could not fork');
+		} else if ($pid) {
+			// we are parent!
+			$this->sender_pid=$pid;
+			echo date('Y-m-d H:i:s')." Sender started with pid ".$this->sender_pid."\n";
+			return;
+		} else {
+			//we are Child and 
+			$this->sender->run();
+			exit();
+		}
+	}
+	
+	function stopSender(){
+		if(! $this->sender_pid){
+			fwrite(STDERR,date('Y-m-d H:i:s')." Sender is not running\n");
+			return;
+		}
+		posix_kill($this->sender_pid,SIGTERM);
+		$res=pcntl_waitpid($this->sender_pid,$status);
+		echo date('Y-m-d H:i:s')." Stopping sender with pid ".$this->sender_pid.": ".
+				($res>0?'ok':'failed')."\n";
+		$this->sender_pid=0;
+		return;
+		
+	}
+	
+	function stop(){
+		$this->stopSender();
+		echo date('Y-m-d H:i:s')." Stopping main process\n";
+		exit;
+	}
+	private $sender;
+	private $sender_pid;
+}
 
 class BayEOSGatewayClient{
 /**
@@ -847,15 +974,9 @@ function __construct($names,$options=array(),$defaults=array()){
 						$this->getOption('bayeosgateway_user'),
 						$this->getOption('absolute_time'),
 						$this->getOption('rm'),
-						$this->getOption('bayeosgateway_version'));
-		
-				while(TRUE){
-					$c = $s->send();
-					if($c){
-						echo date('Y-m-d H:i:s')." ".$this->name.": Successfully sent $c frames\n";
-					}
-					sleep($this->getOption('sender_sleep_time'));
-				}
+						$this->getOption('bayeosgateway_version'),
+						$this->getOption('sender_sleep_time'));
+				$s->run();
 				exit();
 		
 			}

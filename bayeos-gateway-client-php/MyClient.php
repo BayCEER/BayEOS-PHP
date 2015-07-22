@@ -2,8 +2,8 @@
 <?php 
 $options=array('bayeosgateway_url'=>
 		'http://bayconf.bayceer.uni-bayreuth.de/gateway/frame/saveFlat',
-		'bayeosgateway_pw'=>'xbee',
-		'bayeosgateway_user'=>'admin');
+		'bayeosgateway_pw'=>'import',
+		'bayeosgateway_user'=>'import');
 $names=array('PHP-TestDevice1','PHP-TestDevice2');
 
 require_once 'BayEOSGatewayClient.php';
