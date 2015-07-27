@@ -14,10 +14,11 @@ require_once 'BayEOSGatewayClient.php';
 $path='/tmp/bayeos-simpleClient2';
 $name="mySimpleClient";
 $url="http://bayconf.bayceer.uni-bayreuth.de/gateway/frame/saveFlat";
+$options=array('backup_path'=>'/var/bayeos/mySimpleClient2')
 
 //Create a BayEOSSimpleClient
 //Note: This already forks the sender process
-$c = new BayEOSSimpleClient($path,$name,$url);
+$c = new BayEOSSimpleClient($path,$name,$url,$options);
 
 //Setup signal handling for SIGTERM
 declare(ticks = 1);
@@ -32,5 +33,4 @@ while(TRUE){
 	$c->save(array($count++,300,1.0));
 	sleep(5);
 }
-
 ?>

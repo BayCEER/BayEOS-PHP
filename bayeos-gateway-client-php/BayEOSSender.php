@@ -7,13 +7,13 @@ require_once 'BayEOSGatewayClient.php';
 $s = new BayEOSSender('/tmp/bayeos-device1',
 		"PHP-Test-Device",
 		"http://bayconf.bayceer.uni-bayreuth.de/gateway/frame/saveFlat",
-		"xbee",
-		"admin");
+		"import",
+		"import");
 
 while(TRUE){
 	$c = $s->send();
 	if($c){
-		echo "Successfully sent $c post requests\n";
+		echo "Successfully sent $c frames\n";
 	}
 	sleep(5);
 }

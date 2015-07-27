@@ -598,8 +598,12 @@ class BayEOSSender {
  *  If set to false files are kept as .bak file in the BayEOSWriter directory 
  * @param int $sleep_time
  *  sleep_time of the sender when run as thread 
+ * @param int $backup_path
+ *  Backupdirectory. On post error, files are moved to this directory. This is usefull, when $path is 
+ *  on a tmpfs. In case of $rm=FALSE also successfully sent files are moved to this directory.  
 */
-	function __construct($path,$name,$url,$pw='import',$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9',$sleep_time=10){
+	function __construct($path,$name,$url,$pw='import',$user='import',$absolute_time=TRUE,$rm=TRUE,
+			$gateway_version='1.9',$sleep_time=10,$backup_path=''){
 		if(! filter_var($url, FILTER_VALIDATE_URL))
 			die("URL '$url' not valid\n");
 		if(! $pw)
@@ -614,6 +618,13 @@ class BayEOSSender {
 		$this->rm=$rm;
 		$this->gateway_version=$gateway_version;
 		$this->sleep_time=$sleep_time;
+		$this->backup_path=$backup_path;
+		if($this->backup_path && ! is_dir($this->backup_path)){
+			if(! mkdir($this->backup_path,0700,TRUE)){
+				die("could not create ".$this->backup_path);
+			}
+		}
+		
 	}
 
 /**
@@ -637,10 +648,19 @@ class BayEOSSender {
  * Takes allways the oldest file
 */
 	private function sendFile(){
-		chdir($this->path);
-		$files=glob('*.rd');
-		if(count($files)==0) return 0; //nothing to do
-
+		$files=array();
+		if($this->backup_path){		
+			chdir($this->backup_path);
+			$files=glob('*.rd');
+			$in_backup_path=TRUE;
+		}
+		if(count($files)==0){
+			chdir($this->path);
+			$files=glob('*.rd');
+			if(count($files)==0) return 0; //nothing to do
+			$in_backup_path=FALSE;
+		}
+		
 		//open oldest file
 		//echo "opening $files[0]\n";
 		$fp=fopen($files[0],'r');
@@ -676,28 +696,44 @@ class BayEOSSender {
 			}
 		}
 		fclose($fp);
+		$newname=str_replace('.rd','.bak',$files[0]);
+		if($this->backup_path && ! $in_backup_path)
+			$newname=$this->backup_path.'/'.$newname;
+
 		if($frames){
 			//Frames to post...
 			if($res=$this->post($data.$frames)){
 				//Post successful
+
 				if($res==1){
 					if($this->rm) unlink($files[0]);
-					else rename($files[0],str_replace('.rd','.bak',$files[0]));
+					else {
+						rename($files[0],$newname);
+					}
 				} elseif($res==2){
-					fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".
-						str_replace('.rd','.bak',$files[0])."\n");
-					rename($files[0],str_replace('.rd','.bak',$files[0]));
+					fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".$newname."\n");
+					rename($files[0],$newname);
 				}
 				return $count;
 			}
 		} else {
 			//Empty file...
 			if(filesize($files[0])>0)
-				rename($files[0],str_replace('.rd','.bak',$files[0]));
+				rename($files[0],$newname);
 			else 
 				unlink($files[0]);
 			return 0;
 		}
+		
+		//we got an post error - look for files ready in the path directory and move to backup_path
+		if($this->backup_path){
+			chdir($this->path);
+			$files=glob('*.rd');
+			for($i=0;$i<count($files);$i++){
+				rename($files[$i],$this->backup_path.'/'.$files[$i]);
+			}
+		}
+				
 		return 0;		
 		
 	}
@@ -715,7 +751,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.0.10');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.1');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -767,13 +803,19 @@ class BayEOSSender {
 	private $rm;
 	private $gateway_version;
 	private $sleep_time;
+	private $backup_path;
 	
 }
+
+/*
+ * BayEOSSimpleClient extends BayEOSWrite and forks a BayEOSSender 
+ *
+ */
 
 
 class BayEOSSimpleClient extends BayEOSWriter{
 /**
- * Constructor for a BayEOS-Sender
+ * Constructor for a BayEOSSimpleClient
  * 
  * @param string $path
  *  Path where BayEOSWriter puts files
@@ -781,19 +823,25 @@ class BayEOSSimpleClient extends BayEOSWriter{
  *  Sender name
  * @param string $url
  * 	GatewayURL e.g. http://<gateway>/gateway/frame/saveFlat
- * @param string $pw
- * 	Password on gateway
- * @param string $user
- *  User on gateway
- * @param bool $absolute_time
- *  if set to false, relative time is used (delay)
- * @param bool $rm
- *  If set to false files are kept as .bak file in the BayEOSWriter directory 
- * @param int $sleep_time
- *  sleep time of the sender when run as thread 
+ * @param array $options
+ *  Options to be passed by as key value pairs. The following options could be set
+ * 	'pw'=>'import'
+ *  'user'=>'import'
+ *  'absolute_time'=>TRUE
+ *  'rm'=>TRUE,
+ *  'gateway_version'=>'1.9'
+ *  'sleep_time'=>10
+ *  'backup_path'=>'' 
 */
-	function __construct($path,$name,$url,$pw='import',$user='import',$absolute_time=TRUE,$rm=TRUE,$gateway_version='1.9',$sleep_time=10){
-		$this->sender = new BayEOSSender($path,$name,$url,$pw,$user,$absolute_time,$rm,$gateway_version,$sleep_time);
+	function __construct($path,$name,$url,$options=array()){
+		$defaults=array('pw'=>'import','user'=>'import','absolute_time'=>TRUE,'rm'=>TRUE,
+			'gateway_version'=>'1.9','sleep_time'=>10,'backup_path'=>'');
+		while(list($key,$value)=each($defaults)){
+			if(! isset($options[$key])) $options[$key]=$value;
+		}
+		$this->sender = new BayEOSSender($path,$name,$url,
+				$options['pw'],$options['user'],$options['absolute_time'],$options['rm'],
+				$options['gateway_version'],$options['sleep_time'],$options['backup_path']);
 		BayEOSWriter::__construct($path);
 		$this->startSender();	
 		
@@ -884,6 +932,7 @@ function __construct($names,$options=array(),$defaults=array()){
 					'max_time'=>60,
 					'data_type'=>0x1,
 					'sender_sleep_time'=>5,
+					'backup_dir'=>'',
 					'sender'=>$sender_defaults,
 					'bayeosgateway_user'=>'import',
 					'bayeosgateway_version'=>'1.9',
@@ -933,6 +982,9 @@ function __construct($names,$options=array(),$defaults=array()){
 			$this->i=$i;
 			$this->name=$this->names[$i];
 			$path=$this->getOption('tmp_dir').'/'.str_replace(array('/','\\','"','\''),'_',$this->name);
+			$backup_path=($this->getOption('backup_dir')?
+					$this->getOption('backup_dir').'/'.str_replace(array('/','\\','"','\''),'_',$this->name):
+					'');
 			$this->pid_w[$i] = pcntl_fork();
 			if ($this->pid_w[$i] == -1) {
 				die('Could not fork writer process!');
@@ -975,7 +1027,8 @@ function __construct($names,$options=array(),$defaults=array()){
 						$this->getOption('absolute_time'),
 						$this->getOption('rm'),
 						$this->getOption('bayeosgateway_version'),
-						$this->getOption('sender_sleep_time'));
+						$this->getOption('sender_sleep_time'),
+						$backup_path);
 				$s->run();
 				exit();
 		

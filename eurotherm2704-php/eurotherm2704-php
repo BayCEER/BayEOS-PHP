@@ -7,10 +7,10 @@ Priority: optional
 Standards-Version: 3.9.2
 
 Package: eurotherm2704-php
-Version: 1.0.3
+Version: 1.1.0
 Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
 # Pre-Depends: <comma-separated list of packages>
-Depends: bayeos-gateway-client-php (>= 1.0.3)
+Depends: bayeos-gateway-client-php (>= 1.1.1)
 # Recommends: <comma-separated list of packages>
 # Suggests: <comma-separated list of packages>
 # Provides: <comma-separated list of packages>
