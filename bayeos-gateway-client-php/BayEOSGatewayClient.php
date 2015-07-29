@@ -651,12 +651,12 @@ class BayEOSSender {
 		$files=array();
 		if($this->backup_path){		
 			chdir($this->backup_path);
-			$files=glob('*.rd');
+			$files=glob('*.rd'); // look for .rd files in backup_path
 			$in_backup_path=TRUE;
 		}
 		if(count($files)==0){
 			chdir($this->path);
-			$files=glob('*.rd');
+			$files=glob('*.rd'); // look for .rd files in path
 			if(count($files)==0) return 0; //nothing to do
 			$in_backup_path=FALSE;
 		}
@@ -696,31 +696,39 @@ class BayEOSSender {
 			}
 		}
 		fclose($fp);
-		$newname=str_replace('.rd','.bak',$files[0]);
+		
+		//create backup name
+		$backup_file_name=str_replace('.rd','.bak',$files[0]);
 		if($this->backup_path && ! $in_backup_path)
-			$newname=$this->backup_path.'/'.$newname;
+			$backup_file_name=$this->backup_path.'/'.$backup_file_name;
 
 		if($frames){
 			//Frames to post...
 			if($res=$this->post($data.$frames)){
 				//Post successful
-
 				if($res==1){
-					if($this->rm) unlink($files[0]);
-					else {
-						rename($files[0],$newname);
-					}
+					if($this->rm) 
+						unlink($files[0]);
+					else 
+						rename($files[0],$backup_file_name);
+					
 				} elseif($res==2){
-					fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".$newname."\n");
-					rename($files[0],$newname);
+					//HTTP-Fehler 500 Internal server error
+					//This might be caused by an invalied frame
+					//So we will keep the file but move it to .bak
+					//Maybe this is obsolet with current gateway version???
+					fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Will keep failed file as ".$backup_file_name."\n");
+					rename($files[0],$backup_file_name);
 				}
 				return $count;
 			}
 		} else {
-			//Empty file...
+			//No frame in file 
 			if(filesize($files[0])>0)
-				rename($files[0],$newname);
+				//but size > 0 --> keep backup
+				rename($files[0],$backup_file_name);
 			else 
+				//empty file --> remove
 				unlink($files[0]);
 			return 0;
 		}
