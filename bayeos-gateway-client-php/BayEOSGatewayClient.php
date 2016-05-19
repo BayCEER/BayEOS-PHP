@@ -191,6 +191,32 @@ class BayEOSType {
 
 
 class BayEOS {
+	/**
+	 * create a bayeos routed frame
+	 *
+	 * @param int $MyId
+	 * @param int $PanId
+	 * @param string $frame (binary)
+	 * @return string (binary)
+	 */
+	public static function createRoutedFrame($MyId,$PanId,$frame){
+		return pack("C",0x6). //Starting Byte
+			BayEOSType::INT16($MyId). //MyID
+			BayEOSType::INT16($PanId). //PANID
+			$frame;
+	}
+	/**
+	 * create a bayeos delayed frame
+	 *
+	 * @param int $delay in milli seconds
+	 * @param string $frame (binary)
+	 * @return string (binary)
+	 */
+	public static function createDelayedFrame($delay,$frame){
+		return pack("C",0x7).BayEOSType::UINT32($delay).$frame;
+	}
+	
+	
 /**
  * create bayeos data frame
  * 
@@ -207,6 +233,9 @@ class BayEOS {
 		if($offset_type==0x0) $bayeos_frame.=pack("C",$offset); //Simple offset Frame
 		while(list($key,$value)=each($values)){
 			if($offset_type==0x40) $bayeos_frame.=pack("C",$key); //Offset-Value-Frame
+			elseif($offset_type==0x60) {
+				$bayeos_frame.=pack("C",strlen($key)).$key;
+			}
 			switch ($data_type){
 				case 0x1:
 					$bayeos_frame.=BayEOSType::FLOAT32($value); //float32le
@@ -334,6 +363,11 @@ class BayEOS {
 			if($offset_type==0x40){
 				$key=array_pop(unpack("C",substr($frame,$pos,1)));
 				$pos++;
+			} elseif($offset_type==0x60){
+				$key_length=array_pop(unpack("C",substr($frame,$pos,1)));
+				$pos++;
+				$key=substr($frame,$pos,$key_length);
+				$pos+=$key_length;
 			} else $key++;
 			switch ($data_type){
 				case 0x1:
@@ -759,7 +793,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.1');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.2');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
