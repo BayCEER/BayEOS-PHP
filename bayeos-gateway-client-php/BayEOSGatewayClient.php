@@ -269,7 +269,7 @@ class BayEOS {
  * @return array
  * 
  */
-	public static function parseFrame($frame,$ts=FALSE,$origin='',$rssi=FALSE){
+	public static function parseFrame($frame,$ts=FALSE,$origin='',$rssi=FALSE,$validChecksum=NULL){
 		if(! $ts) $ts=microtime(TRUE);
 		$type=array_pop(unpack("C",substr($frame,0,1)));
 		$res=array();
@@ -298,21 +298,21 @@ class BayEOS {
 				break;
 			case 0x6:
 				$origin.='/XBee'.BayEOSType::unpackUINT16(substr($frame,3,2)).':'.BayEOSType::unpackUINT16(substr($frame,1,2));
-				return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi);
+				return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi,$validChecksum);
 			case 0x7:
 				$ts-=BayEOSType::unpackUINT32(substr($frame,1,4))/1000;
-				return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi);
+				return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi,$validChecksum);
 				break;
 			case 0x8:
 				$origin.='/XBee'.BayEOSType::unpackUINT16(substr($frame,3,2)).':'.BayEOSType::unpackUINT16(substr($frame,1,2));
 				$rssi_neu=BayEOSType::unpackUINT8(substr($frame,5,1));
 				if(! $rssi) $rssi=$rssi_neu;
 				if($rssi_neu>$rssi) $rssi=$rssi_neu; 
-				return BayEOS::parseFrame(substr($frame,6),$ts,$origin,$rssi);
+				return BayEOS::parseFrame(substr($frame,6),$ts,$origin,$rssi,$validChecksum);
 			case 0x9:
 				 $ts=DateTime::createFromFormat('Y-m-d H:i:s P','2000-01-01 00:00:00 +00:00')->format('U')+
 				 BayEOSType::unpackUINT32(substr($frame,1,4));
-				 return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi);
+				 return BayEOS::parseFrame(substr($frame,5),$ts,$origin,$rssi,$validChecksum);
 				break;
 			case 0xa:
 				$res['pos']=BayEOSType::unpackUINT32(substr($frame,1,4));
@@ -322,10 +322,22 @@ class BayEOS {
 			case 0xb:
 				$length=BayEOSType::unpackUINT8(substr($frame,1,1));
 				$origin=substr($frame,2,$length);
-				return BayEOS::parseFrame(substr($frame,$length+2),$ts,$origin,$rssi);
+				return BayEOS::parseFrame(substr($frame,$length+2),$ts,$origin,$rssi,$validChecksum);
 			case 0xc:
 				$ts=array_pop(unpack('d',substr($frame,1,8)));
-				return BayEOS::parseFrame(substr($frame,9),$ts,$origin,$rssi);
+				return BayEOS::parseFrame(substr($frame,9),$ts,$origin,$rssi,$validChecksum);
+				break;
+			case 0xf:
+				$checksum=0;
+				$pos=0;
+        		while($pos < strlen($frame)-2){
+        			$checksum += BayEOSType::unpackUINT8(substr($frame,$pos,1));
+        			$pos++;
+        		}
+            	$checksum += BayEOSType::unpackUINT16(substr($frame,$pos,2));
+            	
+        		$validChecksum=($checksum==0xffff);
+        		return BayEOS::parseFrame(substr($frame,1,-2),$ts,$origin,$rssi,$validChecksum);
 				break;
 			default:
 				error_log('ParseFrame: Unexpected type '.$type);
@@ -336,6 +348,7 @@ class BayEOS {
 		$res['ts_f']=DateTime::createFromFormat('U',round($ts))->format('Y-m-d H:i:s P');
 		$res['origin']=$origin;
 		if($rssi) $res['rssi']=$rssi;
+		$res['validChecksum']=$validChecksum;
 		return $res;		
 	}
 	
