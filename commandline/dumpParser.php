@@ -60,6 +60,7 @@ $last_date='-';
 while(! feof($fp)){
 	//read timestamp, length and bayeosframe
 	$ts_bin=fread($fp,4);
+	if(strlen($ts_bin)<4) exit;
 	$ts=BayEOSType::unpackUINT32($ts_bin);
 	if($options['-a']=='f'){//relative time millis()
 		$ts/=1000;
@@ -82,7 +83,13 @@ while(! feof($fp)){
 			fwrite(STDOUT,"found frame: ".date('Y-m-d H:i:s',$ts+$ref_date->format('U'))." - ".($ts/3600)."\n");
 			print_r($res);
 		} elseif($options['-o']=='bin') {
-			fwrite(STDOUT,$ts_bin.$length_bin.$bayeosframe);
+			if(strlen($bayeosframe)!=37) fwrite(STDOUT,$ts_bin.$length_bin.$bayeosframe);
+		} elseif($options['-o']=='hex') {
+			if(strlen($bayeosframe)!=37){
+			fwrite(STDOUT,"found frame: ".date('Y-m-d H:i:s',$ts+$ref_date->format('U'))." - ".($ts/3600)."\n");
+			fwrite(STDOUT,strlen($bayeosframe)."\n");
+			fwrite(STDOUT,bin2hex($bayeosframe)."\n");
+			}
 		}
 		$found++;
 	}

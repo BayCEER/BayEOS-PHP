@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php 
 /*
  * Run the Sender in the background as thread

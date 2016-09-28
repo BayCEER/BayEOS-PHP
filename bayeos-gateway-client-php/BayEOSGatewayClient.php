@@ -192,6 +192,63 @@ class BayEOSType {
 
 class BayEOS {
 	/**
+	 * create a bayeos Origin Frame 
+	 *
+	 * @param string $message
+	 * @param boolean $error
+	 * @return string (binary)
+	 */
+	public static function createMessage($message,$error=0){
+		return pack("C",($error?0x5:0x4)).$message;
+	}
+	/**
+	 * create a bayeos checksum frame
+	 *
+	 * @param string $frame (binary)
+	 * @return string (binary)
+	 */
+	public static function createChecksumFrame($frame){
+		$checksum=0xf;
+		$pos=0;
+		while($pos < strlen($frame)){
+			$checksum += BayEOSType::unpackUINT8(substr($frame,$pos,1));
+			$pos++;
+		}
+		return pack("C",0xf). //Starting Byte
+			$frame.
+			BayEOSType::UINT16(0xffff - ($checksum & 0xffff));
+	}
+	/**
+	 * create a bayeos Origin Frame 
+	 *
+	 * @param string $origin
+	 * @param string $frame (binary)
+	 * @param boolean $routed
+	 * @return string (binary)
+	 */
+	public static function createOriginFrame($origin,$frame,$routed=0){
+		return pack("C",($routed?0xd:0xb)). //Starting Byte
+			pack("C",strlen($origin)). //MyID
+			$origin.
+			$frame;
+	}
+	/**
+	 * create a bayeos routed frame
+	 *
+	 * @param int $MyId
+	 * @param int $PanId
+	 * @param int $rssi
+	 * @param string $frame (binary)
+	 * @return string (binary)
+	 */
+	public static function createRoutedFrameRSSI($MyId,$PanId,$rssi,$frame){
+		return pack("C",0x8). //Starting Byte
+			BayEOSType::INT16($MyId). //MyID
+			BayEOSType::INT16($PanId). //PANID
+			pack("C",$rssi). //RSSI
+			$frame;
+	}
+	/**
 	 * create a bayeos routed frame
 	 *
 	 * @param int $MyId
@@ -327,6 +384,10 @@ class BayEOS {
 				$ts=array_pop(unpack('d',substr($frame,1,8)));
 				return BayEOS::parseFrame(substr($frame,9),$ts,$origin,$rssi,$validChecksum);
 				break;
+			case 0xd:
+				$length=BayEOSType::unpackUINT8(substr($frame,1,1));
+				$origin.='/'.substr($frame,2,$length);
+				return BayEOS::parseFrame(substr($frame,$length+2),$ts,$origin,$rssi,$validChecksum);
 			case 0xf:
 				$checksum=0;
 				$pos=0;
