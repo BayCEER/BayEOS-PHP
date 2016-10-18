@@ -7,10 +7,10 @@ Priority: optional
 Standards-Version: 3.9.2
 
 Package: bayeos-gateway-client-php
-Version: 1.1.4
+Version: 1.1.6
 Maintainer: Stefan Holzheu <holzheu@bayceer.uni-bayreuth.de>
 # Pre-Depends: <comma-separated list of packages>
-Depends: php5-cli, php5-curl, php5-gmp
+Depends: php5-cli | php7-cli | php7.0-cli, php5-curl | php7-curl | php7.0-curl, php5-gmp | php7-gmp | php7.0-gmp
 # Recommends: <comma-separated list of packages>
 # Suggests: <comma-separated list of packages>
 # Provides: <comma-separated list of packages>
