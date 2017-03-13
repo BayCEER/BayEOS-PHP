@@ -867,7 +867,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.2');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.7');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -879,8 +879,9 @@ class BayEOSSender {
 			return 0;
 		}
 		$res=explode("\n",$res);
+		print_r($res);
 		for($i=0;$i<count($res);$i++){
-			if(preg_match('|^HTTP/1\\.[0-9] 200 OK|i',$res[$i])) return 1;
+			if(preg_match('|^HTTP/1\\.[0-9] 200|i',$res[$i])) return 1;
 			elseif(preg_match('|^HTTP/1\\.[0-9] 500|i',$res[$i],$matches)){
 				fwrite(STDERR, date('Y-m-d H:i:s').' '.$this->name." Post Error: $res[$i]\n");
 				return 2;
