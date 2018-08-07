@@ -22,7 +22,7 @@ Depends: bayeos-gateway-client-php (>= 1.1.1)
 Extra-Files: test.sh, test_date.sh, test_origin.sh, test_indexed.sh, raspi-temp.sh
 Files: bayeos-fifo /etc/init.d/
  bayeos-fifo.ini /etc/
- logrotate.d/bayeos-fifo /etc/
+ logrotate.d/bayeos-fifo /etc/logrotate.d/
  bayeos-fifo_start.sh /usr/sbin/
  bayeos-fifo.php /usr/sbin/
 Description: Creates fifos to collect data and send it to a BayEOS gateway 

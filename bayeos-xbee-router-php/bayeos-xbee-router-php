@@ -21,7 +21,7 @@ Depends: bayeos-gateway-client-php (>=1.1.1)
 # Readme: <README.Debian file; defaults to a generic one>
 Files: bayeos-xbee-router /etc/init.d/
  bayeos-xbee-router.ini /etc/
- logrotate.d/bayeos-xbee-router /etc/
+ logrotate.d/bayeos-xbee-router /etc/logrotate.d/
  bayeos-xbee-router_start.sh /usr/sbin/
  bayeos-xbee-router.php /usr/sbin/
  phpXBee.php /usr/share/php/

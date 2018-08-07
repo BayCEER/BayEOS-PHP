@@ -21,7 +21,7 @@ Depends: bayeos-gateway-client-php (>= 1.1.1)
 # Readme: <README.Debian file; defaults to a generic one>
 Files: bayeos-logger-importer /etc/init.d/
  bayeos-logger-importer.ini /etc/
- logrotate.d/bayeos-logger-importer /etc/
+ logrotate.d/bayeos-logger-importer /etc/logrotate.d/
  bayeos-logger-importer_start.sh /usr/sbin/
  bayeos-logger-importer.php /usr/sbin/
 Description: Imports BayEOS logger files via queue directories 

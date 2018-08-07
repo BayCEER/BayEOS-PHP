@@ -21,7 +21,7 @@ Depends: bayeos-gateway-client-php (>=1.1.1)
 # Readme: <README.Debian file; defaults to a generic one>
 Files: bayeos-qli /etc/init.d/
  bayeos-qli.ini /etc/
- logrotate.d/bayeos-qli /etc/
+ logrotate.d/bayeos-qli /etc/logrotate.d/
  bayeos-qli_start.sh /usr/sbin/
  bayeos-qli.php /usr/sbin/
  QLI.php /usr/share/php/

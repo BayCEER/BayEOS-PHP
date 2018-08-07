@@ -311,7 +311,6 @@ class BayEOS {
 					break;		
 			}
 		}
-		//echo "BayEOS-Frame: ".array_pop(unpack('H*',$bayeos_frame))."\n";
 		
 		return $bayeos_frame;
 	}
@@ -328,7 +327,7 @@ class BayEOS {
  */
 	public static function parseFrame($frame,$ts=FALSE,$origin='',$rssi=FALSE,$validChecksum=NULL){
 		if(! $ts) $ts=microtime(TRUE);
-		$type=array_pop(unpack("C",substr($frame,0,1)));
+		$type=unpack("C",substr($frame,0,1))[1];
 		$res=array();
 		switch($type){
 			case 0x1:
@@ -337,12 +336,12 @@ class BayEOS {
 				break;
 			case 0x2:
 				$res['value']=substr($frame,2);
-				$res['cmd']=array_pop(unpack('C',substr($frame,1,1)));
+				$res['cmd']=unpack('C',substr($frame,1,1))[1];
 				$res['type']="Command";
 				break;
 			case 0x3:
 				$res['value']=substr($frame,2);
-				$res['cmd']=array_pop(unpack('C',substr($frame,1,1)));
+				$res['cmd']=unpack('C',substr($frame,1,1))[1];
 				$res['type']="CommandResponse";
 				break;
 			case 0x4:
@@ -381,7 +380,7 @@ class BayEOS {
 				$origin=substr($frame,2,$length);
 				return BayEOS::parseFrame(substr($frame,$length+2),$ts,$origin,$rssi,$validChecksum);
 			case 0xc:
-				$ts=array_pop(unpack('d',substr($frame,1,8)));
+				$ts=unpack('d',substr($frame,1,8))[1];
 				return BayEOS::parseFrame(substr($frame,9),$ts,$origin,$rssi,$validChecksum);
 				break;
 			case 0xd:
@@ -422,7 +421,7 @@ class BayEOS {
  */	
  public static function parseDataFrame($frame){
 		if(substr($frame,0,1)!=pack("C",0x1)) return FALSE;
-		$type=array_pop(unpack("C",substr($frame,1,1)));
+		$type=unpack("C",substr($frame,1,1))[1];
 		//Extract offset and data type
 		$offset_type=(0xf0 & $type);
 		$data_type=(0x0f & $type);
@@ -430,15 +429,15 @@ class BayEOS {
 		$key=0;
 		$res=array();
 		if($offset_type==0x0){
-			$key=array_pop(unpack("C",substr($frame,2,1)));
+		    $key=unpack("C",substr($frame,2,1))[1];
 			$pos++;
 		}
 		while($pos<strlen($frame)){
 			if($offset_type==0x40){
-				$key=array_pop(unpack("C",substr($frame,$pos,1)));
+			    $key=unpack("C",substr($frame,$pos,1))[1];
 				$pos++;
 			} elseif($offset_type==0x60){
-				$key_length=array_pop(unpack("C",substr($frame,$pos,1)));
+			    $key_length=unpack("C",substr($frame,$pos,1))[1];
 				$pos++;
 				$key=substr($frame,$pos,$key_length);
 				$pos+=$key_length;
@@ -461,7 +460,7 @@ class BayEOS {
 					$pos++; 
 					break;
 				case 0x5:
-					$value=array_pop(unpack("d",substr($frame,$pos,8))); //double - Note: double may only work on little endian mashines..
+					$value=unpack("d",substr($frame,$pos,8))[1]; //double - Note: double may only work on little endian mashines..
 					break;
 			}
 			$res[$key]=$value;
@@ -867,7 +866,7 @@ class BayEOSSender {
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 30);
 		curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
 		curl_setopt($ch,CURLOPT_HEADER,1);
-		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.7');
+		curl_setopt($ch,CURLOPT_USERAGENT,'BayEOS-PHP/1.1.9');
 		curl_setopt($ch, CURLOPT_USERPWD, $this->user . ":" . $this->pw);
 		//curl_setopt($ch,CURLOPT_NOBODY,1);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
@@ -879,7 +878,7 @@ class BayEOSSender {
 			return 0;
 		}
 		$res=explode("\n",$res);
-		print_r($res);
+		//print_r($res);
 		for($i=0;$i<count($res);$i++){
 			if(preg_match('|^HTTP/1\\.[0-9] 200|i',$res[$i])) return 1;
 			elseif(preg_match('|^HTTP/1\\.[0-9] 500|i',$res[$i],$matches)){

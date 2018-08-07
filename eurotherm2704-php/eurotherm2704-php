@@ -21,7 +21,7 @@ Depends: bayeos-gateway-client-php (>= 1.1.1)
 # Readme: <README.Debian file; defaults to a generic one>
 Files: eurotherm2704 /etc/init.d/
  eurotherm2704.ini /etc/
- logrotate.d/eurotherm2704 /etc/
+ logrotate.d/eurotherm2704 /etc/logrotate.d/
  eurotherm2704_start.sh /usr/sbin/
  eurotherm2704.php /usr/sbin/
 Description: Read out Eurotherm2704 via ModbusTCP and send data to a BayEOS gateway 

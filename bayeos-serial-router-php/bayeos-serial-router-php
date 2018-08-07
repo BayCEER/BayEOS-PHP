@@ -22,7 +22,7 @@ Depends: bayeos-gateway-client-php (>= 1.1.1)
 Extra-Files: testPHP.php
 Files: bayeos-serial-router /etc/init.d/
  bayeos-serial-router.ini /etc/
- logrotate.d/bayeos-serial-router /etc/
+ logrotate.d/bayeos-serial-router /etc/logrotate.d/
  bayeos-serial-router_start.sh /usr/sbin/
  bayeos-serial-router.php /usr/sbin/
  bayeosSerial.php /usr/share/php/

@@ -22,7 +22,7 @@ Depends: bayeos-gateway-client-php (>= 1.1.1)
 Extra-Files: testServer.php
 Files: bayeos-socket /etc/init.d/
  bayeos-socket.ini /etc/
- logrotate.d/bayeos-socket /etc/
+ logrotate.d/bayeos-socket /etc/logrotate.d/
  bayeos-socket_start.sh /usr/sbin/
  bayeos-socket.php /usr/sbin/
 Description: Read out devices via socket and sends data to a BayEOS gateway 

@@ -14,7 +14,7 @@ require_once 'BayEOSGatewayClient.php';
 $path='/tmp/bayeos-simpleClient2';
 $name="mySimpleClient";
 $url="http://bayconf.bayceer.uni-bayreuth.de/gateway/frame/saveFlat";
-$options=array('backup_path'=>'/var/bayeos/mySimpleClient2')
+$options=array('backup_path'=>'/var/bayeos/mySimpleClient2');
 
 //Create a BayEOSSimpleClient
 //Note: This already forks the sender process
